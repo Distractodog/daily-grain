@@ -1,0 +1,1035 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Daily Grain</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --cell: 64px;
+    --ink: #f4e6cc;
+    --ink-soft: rgba(244, 230, 204, 0.78);
+    --walnut: #3a2416;
+    --brass: #e9b45c;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    font-family: 'Fraunces', Georgia, 'Times New Roman', serif;
+    color: var(--ink);
+    background-color: #7a5434;
+    background-size: 1600px 640px;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    user-select: none;
+    -webkit-user-select: none;
+    overflow-x: hidden;
+  }
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(ellipse at 50% 35%, rgba(255, 220, 170, 0.10) 0%, transparent 45%, rgba(18, 9, 3, 0.62) 100%);
+    z-index: 0;
+  }
+  .wrap { position: relative; z-index: 1; width: 1040px; padding: 34px 0 40px; }
+
+  header { display: flex; align-items: flex-end; justify-content: space-between; gap: 24px; margin-bottom: 22px; }
+  h1 {
+    margin: 0;
+    font-size: 54px;
+    line-height: 1;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+    color: #f6e3c0;
+    text-shadow: 0 2px 0 rgba(60, 30, 10, 0.9), 0 6px 18px rgba(0, 0, 0, 0.45);
+  }
+  .sub { margin: 10px 0 0; font-size: 17px; color: var(--ink-soft); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); }
+  .sub strong { color: #ffd896; font-weight: 600; }
+  .status { margin: 6px 0 0; font-size: 15px; color: #ffd896; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); min-height: 1em; }
+
+  .controls { display: flex; align-items: center; gap: 10px; }
+  .timer {
+    font-variant-numeric: tabular-nums;
+    font-size: 26px;
+    font-weight: 600;
+    min-width: 104px;
+    text-align: center;
+    padding: 6px 16px 8px;
+    border-radius: 10px;
+    color: #f0d6a8;
+    background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), var(--walnut-img, #3a2416);
+    background-size: cover;
+    box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.7), inset 0 -1px 0 rgba(255, 220, 180, 0.12), 0 1px 0 rgba(255, 230, 200, 0.15);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8);
+  }
+  .btn {
+    font: 600 15px 'Fraunces', Georgia, serif;
+    color: #3b220f;
+    padding: 9px 16px 10px;
+    border-radius: 10px;
+    border: 1px solid rgba(60, 30, 10, 0.55);
+    background: var(--maple-img, #e3c690);
+    background-size: 320px 192px;
+    box-shadow: inset 0 2px 0 rgba(255, 250, 235, 0.55), inset 0 -3px 0 rgba(90, 50, 20, 0.35), 0 3px 6px rgba(0, 0, 0, 0.4);
+    text-shadow: 0 1px 0 rgba(255, 245, 225, 0.5);
+    cursor: pointer;
+    transition: transform 0.08s, box-shadow 0.08s, filter 0.15s;
+  }
+  .btn:hover { filter: brightness(1.06); }
+  .btn:active { transform: translateY(2px); box-shadow: inset 0 2px 0 rgba(255, 250, 235, 0.4), inset 0 -1px 0 rgba(90, 50, 20, 0.35), 0 1px 2px rgba(0, 0, 0, 0.4); }
+  .btn:disabled { opacity: 0.55; cursor: default; filter: saturate(0.6); }
+  .btn:focus-visible { outline: 2px solid #ffd896; outline-offset: 2px; }
+
+  #stage { position: relative; width: 1040px; height: 504px; }
+
+  #board, #tray {
+    position: absolute;
+    top: 0;
+    width: 504px;
+    height: 504px;
+    border-radius: 16px;
+  }
+  #board {
+    left: 0;
+    background-color: var(--walnut);
+    background-size: 504px 504px;
+    box-shadow:
+      0 22px 44px rgba(0, 0, 0, 0.55),
+      0 4px 10px rgba(0, 0, 0, 0.45),
+      inset 0 2px 0 rgba(255, 225, 190, 0.18),
+      inset 0 -4px 0 rgba(0, 0, 0, 0.45),
+      inset 2px 0 0 rgba(255, 225, 190, 0.07),
+      inset -2px 0 0 rgba(0, 0, 0, 0.3);
+    transition: box-shadow 0.6s;
+  }
+  #board::before {
+    content: '';
+    position: absolute;
+    inset: 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.35);
+    box-shadow: 0 1px 0 rgba(255, 225, 190, 0.08), inset 0 1px 0 rgba(255, 225, 190, 0.06);
+    pointer-events: none;
+  }
+  #board.won {
+    box-shadow:
+      0 0 0 3px rgba(255, 196, 110, 0.55),
+      0 0 60px 10px rgba(255, 170, 70, 0.45),
+      0 22px 44px rgba(0, 0, 0, 0.55),
+      inset 0 2px 0 rgba(255, 225, 190, 0.18),
+      inset 0 -4px 0 rgba(0, 0, 0, 0.45);
+  }
+  #tray {
+    left: 536px;
+    background-color: #2b1a10;
+    background-size: 504px 504px;
+    box-shadow:
+      0 22px 44px rgba(0, 0, 0, 0.5),
+      0 0 0 10px rgba(58, 36, 22, 0.0),
+      inset 0 10px 22px rgba(0, 0, 0, 0.7),
+      inset 0 -2px 0 rgba(255, 225, 190, 0.12),
+      inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+  }
+
+  .cell {
+    position: absolute;
+    width: calc(var(--cell) - 6px);
+    height: calc(var(--cell) - 6px);
+    border-radius: 7px;
+    background: rgba(12, 6, 2, 0.30);
+    box-shadow:
+      inset 0 4px 7px rgba(0, 0, 0, 0.72),
+      inset 0 1px 2px rgba(0, 0, 0, 0.6),
+      0 1px 0 rgba(255, 222, 180, 0.13);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    font-weight: 600;
+    color: rgba(215, 172, 122, 0.62);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.85), 0 1px 0 rgba(255, 228, 190, 0.10);
+  }
+  .cell.month { font-size: 16px; letter-spacing: 0.2px; }
+  .cell.today {
+    color: #4a2708;
+    text-shadow: 0 1px 0 rgba(255, 240, 205, 0.55);
+    font-weight: 800;
+    background:
+      radial-gradient(circle at 50% 38%, #ffe2a6 0%, #f0b45a 46%, #b8732a 86%, #8a501b 100%);
+    box-shadow:
+      inset 0 2px 4px rgba(80, 40, 5, 0.45),
+      inset 0 -2px 3px rgba(255, 235, 190, 0.35),
+      0 0 0 2px rgba(255, 210, 140, 0.35),
+      0 0 18px 4px rgba(255, 170, 60, 0.50);
+    animation: glow 3.2s ease-in-out infinite;
+  }
+  @keyframes glow {
+    0%, 100% { filter: brightness(1); }
+    50% { filter: brightness(1.12); }
+  }
+
+  .piece {
+    position: absolute;
+    left: 0;
+    top: 0;
+    will-change: left, top, transform;
+  }
+  .piece .inner { position: absolute; inset: 0; }
+  .piece canvas {
+    display: block;
+    filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.45)) drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+    transition: filter 0.15s;
+  }
+  .piece.dragging canvas {
+    filter: drop-shadow(0 16px 12px rgba(0, 0, 0, 0.45)) drop-shadow(0 4px 4px rgba(0, 0, 0, 0.35));
+  }
+
+  #ghost { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 100000; }
+  .ghost-cell {
+    position: absolute;
+    width: var(--cell);
+    height: var(--cell);
+    border-radius: 6px;
+    border: 3px solid rgba(132, 224, 120, 0.95);
+    background: rgba(132, 224, 120, 0.14);
+    box-shadow: 0 0 10px rgba(132, 224, 120, 0.55);
+  }
+  #ghost.bad .ghost-cell {
+    border-color: rgba(238, 86, 64, 0.95);
+    background: rgba(238, 86, 64, 0.16);
+    box-shadow: 0 0 10px rgba(238, 86, 64, 0.55);
+  }
+
+  .help {
+    margin: 26px auto 0;
+    text-align: center;
+    font-size: 15px;
+    color: var(--ink-soft);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+    line-height: 1.7;
+  }
+  kbd {
+    font: 600 13px 'Fraunces', Georgia, serif;
+    color: #3b220f;
+    padding: 1px 7px 2px;
+    border-radius: 5px;
+    background: #e8d0a2;
+    box-shadow: inset 0 -2px 0 rgba(90, 50, 20, 0.35), 0 1px 2px rgba(0, 0, 0, 0.4);
+  }
+
+  #overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 200000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(20, 10, 4, 0.45);
+  }
+  #overlay.show { display: flex; animation: fadeIn 0.3s ease-out; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .card {
+    width: 400px;
+    padding: 30px 32px 28px;
+    border-radius: 16px;
+    text-align: center;
+    color: #3b220f;
+    background: var(--maple-img, #e3c690);
+    background-size: 640px 384px;
+    box-shadow: inset 0 3px 0 rgba(255, 250, 235, 0.6), inset 0 -5px 0 rgba(90, 50, 20, 0.3), 0 30px 60px rgba(0, 0, 0, 0.6);
+    animation: pop 0.45s cubic-bezier(0.2, 1.4, 0.4, 1);
+  }
+  @keyframes pop { from { transform: scale(0.7); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .card h2 { margin: 0 0 8px; font-size: 40px; font-weight: 800; text-shadow: 0 1px 0 rgba(255, 245, 225, 0.6); }
+  .card p { margin: 6px 0; font-size: 17px; }
+  .card .big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; margin: 10px 0; color: #6a320c; }
+  .card .btn { margin-top: 14px; background: linear-gradient(#5a3820, #3d2414); color: #f6e3c0; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6); }
+
+  .shaving { position: fixed; top: -20px; z-index: 150000; pointer-events: none; border-radius: 50% 50% 40% 40%; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Daily Grain</h1>
+      <p class="sub" id="sub"></p>
+      <p class="status" id="status"></p>
+    </div>
+    <div class="controls">
+      <div class="timer" id="timer" title="Solve time">0:00</div>
+      <button class="btn" id="undoBtn" title="Undo (Ctrl/Cmd+Z)">Undo</button>
+      <button class="btn" id="resetBtn" title="Clear the board">Reset</button>
+      <button class="btn" id="muteBtn" title="Toggle sound">Sound on</button>
+    </div>
+  </header>
+
+  <div id="stage">
+    <div id="board"></div>
+    <div id="tray"></div>
+    <div id="ghost"></div>
+  </div>
+
+  <p class="help">
+    Drag every piece onto the board so only today's month and day stay showing.<br>
+    Rotate: <kbd>R</kbd>, right-click or scroll &nbsp;·&nbsp; Flip: <kbd>F</kbd> or double-click &nbsp;·&nbsp; Undo: <kbd>⌘/Ctrl Z</kbd>
+  </p>
+</div>
+
+<div id="overlay">
+  <div class="card">
+    <h2>Solved</h2>
+    <p id="winText"></p>
+    <div class="big" id="winTime">0:00</div>
+    <p id="winBest"></p>
+    <p>A new date waits tomorrow.</p>
+    <button class="btn" id="closeWin">Admire the board</button>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// PIECES: each piece is a list of [row, col] cells. Replaced by tools/search.js output.
+const PIECES = [
+  [[0,0],[1,0],[1,1],[2,0],[3,0]],
+  [[0,0],[0,1],[1,0],[1,1],[2,0]],
+  [[0,0],[0,1],[0,2],[1,0],[2,0]],
+  [[0,0],[0,1],[1,0],[2,0],[3,0]],
+  [[0,1],[1,0],[1,1],[2,0],[3,0]],
+  [[0,0],[0,1],[1,0],[2,0],[2,1]],
+  [[0,1],[0,2],[1,1],[2,0],[2,1]],
+  [[0,0],[1,0],[1,1],[1,2],[2,0],[3,0]]
+];
+
+/* ---------- Layout constants ---------- */
+const CELL = 64;
+const PAD = 28;
+const BOARD_PX = 7 * CELL + 2 * PAD;          // 504
+const TRAY_X = BOARD_PX + 32;                 // 536
+const DPR = Math.min(2, window.devicePixelRatio || 1);
+const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+const WOODS = [
+  { name: 'Maple',   light: [242, 212, 160], dark: [208, 160, 100], ring: 9,  contrast: 0.55, pore: 0.25 },
+  { name: 'Cherry',  light: [204, 122, 80],  dark: [146, 70, 40],   ring: 11, contrast: 0.65, pore: 0.35 },
+  { name: 'Birch',   light: [250, 241, 220], dark: [224, 207, 172], ring: 8,  contrast: 0.5,  pore: 0.2  },
+  { name: 'Oak',     light: [222, 176, 112], dark: [150, 102, 54],  ring: 13, contrast: 0.85, pore: 0.7  },
+  { name: 'Ash',     light: [216, 208, 188], dark: [146, 134, 110], ring: 12, contrast: 0.8,  pore: 0.55 },
+  { name: 'Beech',   light: [232, 184, 140], dark: [190, 132, 92],  ring: 9,  contrast: 0.55, pore: 0.3  },
+  { name: 'Teak',    light: [198, 148, 84],  dark: [128, 86, 42],   ring: 12, contrast: 0.7,  pore: 0.5  },
+  { name: 'Hickory', light: [228, 186, 126], dark: [138, 90, 48],  ring: 10, contrast: 0.9,  pore: 0.45 },
+];
+const WALNUT = { light: [104, 68, 44], dark: [50, 29, 17], ring: 10, contrast: 0.85, pore: 0.6, warp: 3.2 };
+const TABLE  = { light: [178, 126, 80], dark: [118, 76, 44], ring: 15, contrast: 0.6, pore: 0.5, warp: 2.2 };
+
+/* ---------- Board geometry ---------- */
+function isBoardCell(r, c) {
+  if (r < 0 || c < 0 || c > 6) return false;
+  if (r <= 1) return c <= 5;
+  if (r <= 5) return true;
+  if (r === 6) return c <= 2;
+  return false;
+}
+function cellLabel(r, c) {
+  if (r <= 1) return MONTHS[r * 6 + c];
+  if (r <= 5) return String((r - 2) * 7 + c + 1);
+  return String(29 + c);
+}
+
+/* ---------- Today ---------- */
+const TODAY = (() => {
+  const now = new Date();
+  let m = now.getMonth(), d = now.getDate(), override = false;
+  const q = new URLSearchParams(location.search).get('date');   // e.g. ?date=2-29 for testing
+  if (q && /^\d{1,2}-\d{1,2}$/.test(q)) {
+    const [qm, qd] = q.split('-').map(Number);
+    if (qm >= 1 && qm <= 12 && qd >= 1 && qd <= 31) { m = qm - 1; d = qd; override = true; }
+  }
+  const pad = n => String(n).padStart(2, '0');
+  const key = `${now.getFullYear()}-${pad(m + 1)}-${pad(d)}`;
+  const monthCell = [m < 6 ? 0 : 1, m % 6];
+  const dayCell = d <= 28 ? [2 + Math.floor((d - 1) / 7), (d - 1) % 7] : [6, d - 29];
+  const weekday = override ? '' : now.toLocaleDateString(undefined, { weekday: 'long' }) + ', ';
+  return { m, d, key, override, monthCell, dayCell, label: `${weekday}${MONTH_NAMES[m]} ${d}` };
+})();
+const isToday = (r, c) =>
+  (r === TODAY.monthCell[0] && c === TODAY.monthCell[1]) || (r === TODAY.dayCell[0] && c === TODAY.dayCell[1]);
+
+/* ---------- Procedural wood ---------- */
+function makeNoise(seed) {
+  let s = (seed >>> 0) || 1;
+  const rnd = () => (s = (Math.imul(s, 1664525) + 1013904223) >>> 0) / 4294967296;
+  const perm = new Uint16Array(512), vals = new Float32Array(256);
+  const p = Array.from({ length: 256 }, (_, i) => i);
+  for (let i = 255; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [p[i], p[j]] = [p[j], p[i]]; }
+  for (let i = 0; i < 512; i++) perm[i] = p[i & 255];
+  for (let i = 0; i < 256; i++) vals[i] = rnd() * 2 - 1;
+  const noise = (x, y) => {
+    const xi = Math.floor(x), yi = Math.floor(y), xf = x - xi, yf = y - yi;
+    const X = xi & 255, Y = yi & 255;
+    const u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+    const a = vals[perm[X + perm[Y]]], b = vals[perm[X + 1 + perm[Y]]];
+    const c = vals[perm[X + perm[Y + 1]]], d = vals[perm[X + 1 + perm[Y + 1]]];
+    return a + (b - a) * u + (c - a) * v + (a - b - c + d) * u * v;
+  };
+  return (x, y, oct = 4) => {
+    let t = 0, amp = 0.5, f = 1;
+    for (let o = 0; o < oct; o++) { t += amp * noise(x * f, y * f); f *= 2.03; amp *= 0.5; }
+    return t;
+  };
+}
+const smooth = (a, b, x) => { const t = Math.min(1, Math.max(0, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+
+// Paints long-grain wood (grain runs along x). `sx` = texture pixels per CSS pixel.
+function paintWood(w, h, wood, seed, sx = 1, tone = 1) {
+  const img = new ImageData(w, h), d = img.data;
+  const n = makeNoise(seed), n2 = makeNoise(seed * 7 + 3);
+  const ring = wood.ring;
+  for (let y = 0; y < h; y++) {
+    const Y = y / sx;
+    for (let x = 0; x < w; x++) {
+      const X = x / sx;
+      const warp = n(X / 260, Y / 70, 3);
+      const t = (Y + warp * ring * (wood.warp ?? 4.5) + n2(X / 55, Y / 14, 2) * ring * 0.55) / ring;
+      const fr = t - Math.floor(t);
+      let k = smooth(0.52, 0.93, fr) * (1 - smooth(0.93, 1, fr) * 0.7) * wood.contrast;
+      const pore = n2(X / 22 + 31, Y / 1.1, 2);
+      k += Math.max(0, pore - 0.12) * 0.9 * wood.pore;
+      k = Math.min(1, Math.max(0, k));
+      const tn = tone * (1 + n(X / 420 + 11, Y / 380, 2) * 0.14);
+      const i = (y * w + x) * 4;
+      d[i]     = (wood.light[0] * (1 - k) + wood.dark[0] * k) * tn;
+      d[i + 1] = (wood.light[1] * (1 - k) + wood.dark[1] * k) * tn;
+      d[i + 2] = (wood.light[2] * (1 - k) + wood.dark[2] * k) * tn;
+      d[i + 3] = 255;
+    }
+  }
+  return img;
+}
+function canvasOf(w, h) { const c = document.createElement('canvas'); c.width = w; c.height = h; return c; }
+function woodCanvas(w, h, wood, seed, sx, tone) {
+  const c = canvasOf(w, h);
+  c.getContext('2d').putImageData(paintWood(w, h, wood, seed, sx, tone), 0, 0);
+  return c;
+}
+function makeTable() {
+  // 800x320 texture shown at 1600x640 CSS px: four planks, staggered end joints.
+  const W = 800, H = 320, PH = 80;
+  const c = canvasOf(W, H), g = c.getContext('2d');
+  const tones = [1.0, 0.9, 1.06, 0.94];
+  for (let i = 0; i < 4; i++) g.putImageData(paintWood(W, PH, TABLE, 101 + i * 17, 0.5, tones[i]), 0, i * PH);
+  const joints = [0, 330, 610, 170];
+  for (let i = 0; i < 4; i++) {
+    const y = i * PH;
+    g.fillStyle = 'rgba(30,16,6,0.75)'; g.fillRect(0, y, W, 1.5);
+    g.fillStyle = 'rgba(255,225,180,0.10)'; g.fillRect(0, y + 1.5, W, 1);
+    g.fillStyle = 'rgba(0,0,0,0.12)'; g.fillRect(0, y + PH - 3, W, 3);
+    const jx = joints[i];
+    g.fillStyle = 'rgba(30,16,6,0.6)'; g.fillRect(jx, y, 1.5, PH);
+    if (jx !== 0) { g.fillStyle = 'rgba(30,16,6,0.6)'; g.fillRect(0, y, 1, PH); }
+  }
+  return c;
+}
+
+/* ---------- Affine helpers (piece orientation) ---------- */
+// m = [a,b,c,d,e,f] maps base piece coordinates (cell units, x=col, y=row) to current orientation.
+const mul = (A, B) => [
+  A[0] * B[0] + A[2] * B[1], A[1] * B[0] + A[3] * B[1],
+  A[0] * B[2] + A[2] * B[3], A[1] * B[2] + A[3] * B[3],
+  A[0] * B[4] + A[2] * B[5] + A[4], A[1] * B[4] + A[3] * B[5] + A[5],
+];
+function orientedCells(p) {
+  const m = p.m;
+  return p.base.map(([r, c]) => {
+    const x = c + 0.5, y = r + 0.5;
+    return [Math.round(m[1] * x + m[3] * y + m[5] - 0.5), Math.round(m[0] * x + m[2] * y + m[4] - 0.5)];
+  });
+}
+
+/* ---------- State ---------- */
+const stage = document.getElementById('stage');
+const boardEl = document.getElementById('board');
+const trayEl = document.getElementById('tray');
+const ghostEl = document.getElementById('ghost');
+const timerEl = document.getElementById('timer');
+const statusEl = document.getElementById('status');
+
+const COLS = 3, ROWS = Math.ceil(PIECES.length / COLS);
+const SLOT_W = BOARD_PX / COLS, SLOT_H = BOARD_PX / ROWS;
+const MAX_DIM = Math.max(...PIECES.map(cells => Math.max(...cells.map(([r, c]) => Math.max(r, c))) + 1));
+const TRAY_SCALE = Math.min(0.6, (Math.min(SLOT_W, SLOT_H) - 22) / (MAX_DIM * CELL));
+
+let pieces = [];
+let zTop = 10;
+let undoStack = [];
+let drag = null, pending = null;
+let lastPointer = { x: -1, y: -1 };
+let solved = false;
+let timerStart = 0, timerElapsed = 0, timerRunning = false, timerHandle = 0;
+
+const store = {
+  read() { try { return JSON.parse(localStorage.getItem('dailyGrain.v1')) || {}; } catch (e) { return {}; } },
+  write(v) { try { localStorage.setItem('dailyGrain.v1', JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
+};
+let muted = !!store.read().muted;
+
+/* ---------- Audio: synthesized wooden clack ---------- */
+let audio = null;
+function ensureAudio() {
+  if (!audio) { try { audio = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { audio = null; } }
+  if (audio && audio.state === 'suspended') audio.resume();
+}
+function clack(vol = 1, pitch = 1) {
+  if (muted || !audio) return;
+  const t = audio.currentTime;
+  const len = Math.floor(audio.sampleRate * 0.06);
+  const buf = audio.createBuffer(1, len, audio.sampleRate), ch = buf.getChannelData(0);
+  for (let i = 0; i < len; i++) ch[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 6);
+  const src = audio.createBufferSource(); src.buffer = buf;
+  const bp = audio.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1900 * pitch; bp.Q.value = 1.4;
+  const g1 = audio.createGain(); g1.gain.value = 0.55 * vol;
+  src.connect(bp).connect(g1).connect(audio.destination);
+  src.start(t);
+  const osc = audio.createOscillator(); osc.type = 'triangle';
+  osc.frequency.setValueAtTime(260 * pitch, t); osc.frequency.exponentialRampToValueAtTime(120 * pitch, t + 0.08);
+  const g2 = audio.createGain();
+  g2.gain.setValueAtTime(0.35 * vol, t); g2.gain.exponentialRampToValueAtTime(0.001, t + 0.11);
+  osc.connect(g2).connect(audio.destination);
+  osc.start(t); osc.stop(t + 0.12);
+}
+
+/* ---------- Rendering ---------- */
+let woodTextures = [];
+
+function buildBoard() {
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) {
+    if (!isBoardCell(r, c)) continue;
+    const el = document.createElement('div');
+    el.className = 'cell' + (r <= 1 ? ' month' : '') + (isToday(r, c) ? ' today' : '');
+    el.style.left = (PAD + c * CELL + 3) + 'px';
+    el.style.top = (PAD + r * CELL + 3) + 'px';
+    el.textContent = cellLabel(r, c);
+    boardEl.appendChild(el);
+  }
+}
+
+function makeGrain(p) {
+  const W = p.bw * CELL * DPR, H = p.bh * CELL * DPR;
+  const cv = canvasOf(W, H), g = cv.getContext('2d');
+  const pat = g.createPattern(woodTextures[p.wood], 'repeat');
+  const ox = ((p.i * 137) % 300) * DPR, oy = ((p.i * 71) % 160) * DPR;
+  g.fillStyle = pat;
+  if (p.bh > p.bw) {             // grain follows the long axis
+    g.translate(W, 0); g.rotate(Math.PI / 2);
+    g.translate(-ox, -oy); g.fillRect(ox, oy, H, W);
+  } else {
+    g.translate(-ox, -oy); g.fillRect(ox, oy, W, H);
+  }
+  return cv;
+}
+
+function renderPiece(p) {
+  const { w, h, cv } = p;
+  cv.width = w * CELL * DPR; cv.height = h * CELL * DPR;
+  cv.style.width = w * CELL + 'px'; cv.style.height = h * CELL + 'px';
+  p.el.style.width = w * CELL + 'px'; p.el.style.height = h * CELL + 'px';
+  const g = cv.getContext('2d');
+  const has = new Set(p.cells.map(([r, c]) => r * 16 + c));
+  const at = (r, c) => has.has(r * 16 + c);
+
+  // grain, clipped to the piece's cells, rotating with the piece
+  g.save();
+  g.setTransform(DPR * CELL, 0, 0, DPR * CELL, 0, 0);
+  g.beginPath();
+  for (const [r, c] of p.cells) g.rect(c, r, 1, 1);
+  g.clip();
+  const m = p.m;
+  g.transform(m[0], m[1], m[2], m[3], m[4], m[5]);
+  g.drawImage(p.grain, 0, 0, p.bw, p.bh);
+  g.restore();
+
+  // lighting overlay + bevels, always lit from the top-left
+  g.save();
+  g.setTransform(DPR, 0, 0, DPR, 0, 0);
+  g.beginPath();
+  for (const [r, c] of p.cells) g.rect(c * CELL, r * CELL, CELL, CELL);
+  g.clip();
+  const sheen = g.createLinearGradient(0, 0, w * CELL, h * CELL);
+  sheen.addColorStop(0, 'rgba(255,248,230,0.10)');
+  sheen.addColorStop(1, 'rgba(40,20,5,0.10)');
+  g.fillStyle = sheen; g.fillRect(0, 0, w * CELL, h * CELL);
+
+  const B = 7;
+  const band = (pts, x0, y0, x1, y1, a0, col) => {
+    const gr = g.createLinearGradient(x0, y0, x1, y1);
+    gr.addColorStop(0, `rgba(${col},${a0})`); gr.addColorStop(1, `rgba(${col},0)`);
+    g.fillStyle = gr; g.beginPath(); g.moveTo(pts[0], pts[1]);
+    for (let i = 2; i < pts.length; i += 2) g.lineTo(pts[i], pts[i + 1]);
+    g.closePath(); g.fill();
+  };
+  const L = '255,247,228', D = '45,22,6';
+  for (const [r, c] of p.cells) {
+    const x0 = c * CELL, y0 = r * CELL, x1 = x0 + CELL, y1 = y0 + CELL;
+    const T = !at(r - 1, c), Bm = !at(r + 1, c), Lf = !at(r, c - 1), Rt = !at(r, c + 1);
+    if (T)  band([x0, y0, x1, y0, x1 - (Rt ? B : 0), y0 + B, x0 + (Lf ? B : 0), y0 + B], 0, y0, 0, y0 + B, 0.55, L);
+    if (Lf) band([x0, y0, x0 + B, y0 + (T ? B : 0), x0 + B, y1 - (Bm ? B : 0), x0, y1], x0, 0, x0 + B, 0, 0.32, L);
+    if (Bm) band([x0, y1, x1, y1, x1 - (Rt ? B : 0), y1 - B, x0 + (Lf ? B : 0), y1 - B], 0, y1, 0, y1 - B, 0.45, D);
+    if (Rt) band([x1, y0, x1 - B, y0 + (T ? B : 0), x1 - B, y1 - (Bm ? B : 0), x1, y1], x1, 0, x1 - B, 0, 0.34, D);
+  }
+  // crisp outer edge
+  g.strokeStyle = 'rgba(40,18,4,0.7)'; g.lineWidth = 1.4;
+  g.beginPath();
+  for (const [r, c] of p.cells) {
+    const x0 = c * CELL, y0 = r * CELL, x1 = x0 + CELL, y1 = y0 + CELL;
+    if (!at(r - 1, c)) { g.moveTo(x0, y0 + 0.6); g.lineTo(x1, y0 + 0.6); }
+    if (!at(r + 1, c)) { g.moveTo(x0, y1 - 0.6); g.lineTo(x1, y1 - 0.6); }
+    if (!at(r, c - 1)) { g.moveTo(x0 + 0.6, y0); g.lineTo(x0 + 0.6, y1); }
+    if (!at(r, c + 1)) { g.moveTo(x1 - 0.6, y0); g.lineTo(x1 - 0.6, y1); }
+  }
+  g.stroke();
+  g.restore();
+}
+
+/* ---------- Positioning ---------- */
+function setTransition(p, on, ms = 200) {
+  p.el.style.transition = on
+    ? `left ${ms}ms cubic-bezier(.2,.8,.3,1), top ${ms}ms cubic-bezier(.2,.8,.3,1), transform ${ms}ms cubic-bezier(.2,.8,.3,1)`
+    : 'none';
+}
+function place(p, x, y, scale, ox = 0, oy = 0) {
+  p.x = x; p.y = y; p.scale = scale; p.ox = ox; p.oy = oy;
+  p.el.style.left = x + 'px';
+  p.el.style.top = y + 'px';
+  p.el.style.transformOrigin = `${ox}px ${oy}px`;
+  p.el.style.transform = `scale(${scale})`;
+}
+function homeXY(p) {
+  const col = p.i % COLS, row = Math.floor(p.i / COLS);
+  const sw = p.w * CELL * TRAY_SCALE, sh = p.h * CELL * TRAY_SCALE;
+  return [TRAY_X + col * SLOT_W + (SLOT_W - sw) / 2, row * SLOT_H + (SLOT_H - sh) / 2];
+}
+function sendHome(p, animate = true) {
+  // origin change is invisible at the current scale only if we also compensate; do it with transitions off
+  setTransition(p, false);
+  const tlx = p.x + p.ox - p.scale * p.ox, tly = p.y + p.oy - p.scale * p.oy;
+  place(p, tlx, tly, p.scale, 0, 0);
+  void p.el.offsetWidth;
+  if (animate) setTransition(p, true, 240);
+  const [x, y] = homeXY(p);
+  place(p, x, y, TRAY_SCALE, 0, 0);
+}
+function seatOnBoard(p, animate = true) {
+  setTransition(p, false);
+  const tlx = p.x + p.ox - p.scale * p.ox, tly = p.y + p.oy - p.scale * p.oy;
+  place(p, tlx, tly, p.scale, 0, 0);
+  void p.el.offsetWidth;
+  if (animate) setTransition(p, true, 120);
+  place(p, PAD + p.placed.c * CELL, PAD + p.placed.r * CELL, 1, 0, 0);
+}
+
+/* ---------- Occupancy / validity ---------- */
+function occupied(except) {
+  const s = new Set();
+  for (const q of pieces) if (q !== except && q.placed) for (const [r, c] of q.cells) s.add((q.placed.r + r) * 16 + (q.placed.c + c));
+  return s;
+}
+function fits(p, r0, c0) {
+  const occ = occupied(p);
+  return p.cells.every(([r, c]) => {
+    const R = r + r0, C = c + c0;
+    return isBoardCell(R, C) && !isToday(R, C) && !occ.has(R * 16 + C);
+  });
+}
+
+/* ---------- Undo ---------- */
+const snapshot = () => JSON.stringify(pieces.map(p => ({ m: p.m, w: p.w, h: p.h, placed: p.placed })));
+function restore(snap) {
+  const data = JSON.parse(snap);
+  data.forEach((s, i) => {
+    const p = pieces[i];
+    const changed = JSON.stringify(p.m) !== JSON.stringify(s.m);
+    p.m = s.m; p.w = s.w; p.h = s.h; p.cells = orientedCells(p); p.placed = s.placed;
+    if (changed) renderPiece(p);
+    if (p.placed) seatOnBoard(p); else sendHome(p);
+    p.el.style.zIndex = p.placed ? 10 + i : 500 + i;
+  });
+  updateButtons();
+}
+// Only board changes are undoable; turning a piece in the tray is not a move.
+const boardOf = snap => JSON.stringify(JSON.parse(snap).map(s => s.placed ? [s.placed, s.m] : null));
+function pushUndo(before) {
+  if (boardOf(before) !== boardOf(snapshot())) { undoStack.push(before); updateButtons(); }
+}
+function undo() {
+  if (drag || solved || !undoStack.length) return;
+  restore(undoStack.pop());
+  clack(0.5, 0.8);
+  updateButtons();
+}
+
+/* ---------- Hit testing ---------- */
+function toStage(cx, cy) { const r = stage.getBoundingClientRect(); return { x: cx - r.left, y: cy - r.top }; }
+function pieceAt(cx, cy) {
+  const sorted = [...pieces].sort((a, b) => (+b.el.style.zIndex || 0) - (+a.el.style.zIndex || 0));
+  for (const p of sorted) {
+    const rect = p.el.getBoundingClientRect();
+    if (cx < rect.left || cx >= rect.right || cy < rect.top || cy >= rect.bottom) continue;
+    const lc = Math.floor((cx - rect.left) / rect.width * p.w);
+    const lr = Math.floor((cy - rect.top) / rect.height * p.h);
+    if (p.cells.some(([r, c]) => r === lr && c === lc)) return { p, lr, lc };
+  }
+  return null;
+}
+
+/* ---------- Ghost ---------- */
+function updateGhost() {
+  const p = drag.p;
+  const c0 = Math.round((p.x - PAD) / CELL), r0 = Math.round((p.y - PAD) / CELL);
+  const cand = p.cells.map(([r, c]) => [r + r0, c + c0]);
+  const near = cand.some(([r, c]) => r >= -1 && r <= 7 && c >= -1 && c <= 7) &&
+               cand.some(([r, c]) => r >= 0 && r <= 6 && c >= 0 && c <= 6);
+  if (!near) { ghostEl.innerHTML = ''; drag.target = null; return; }
+  const ok = fits(p, r0, c0);
+  drag.target = ok ? { r: r0, c: c0 } : null;
+  ghostEl.className = ok ? '' : 'bad';
+  ghostEl.innerHTML = cand.map(([r, c]) =>
+    `<div class="ghost-cell" style="left:${PAD + c * CELL}px;top:${PAD + r * CELL}px"></div>`).join('');
+}
+
+/* ---------- Drag ---------- */
+function startDrag(p, cx, cy) {
+  ensureAudio();
+  if (!timerRunning && !solved) startTimer();
+  const rect = p.el.getBoundingClientRect();
+  const lx = (cx - rect.left) / rect.width * p.w * CELL;
+  const ly = (cy - rect.top) / rect.height * p.h * CELL;
+  const s = toStage(cx, cy);
+  drag = { p, lx, ly, before: snapshot(), target: null };
+  p.placed = null;
+  setTransition(p, false);
+  place(p, s.x - lx, s.y - ly, p.scale, lx, ly);     // same visual, origin moved under the cursor
+  void p.el.offsetWidth;
+  p.el.style.transition = 'transform 160ms cubic-bezier(.2,.8,.3,1)';
+  p.el.style.transform = 'scale(1)'; p.scale = 1;
+  p.el.style.zIndex = 100000 - 1;
+  p.el.classList.add('dragging');
+  document.body.style.cursor = 'grabbing';
+  updateGhost();
+}
+function moveDrag(cx, cy) {
+  const s = toStage(cx, cy), p = drag.p;
+  p.x = s.x - drag.lx; p.y = s.y - drag.ly;
+  p.el.style.left = p.x + 'px'; p.el.style.top = p.y + 'px';
+  updateGhost();
+}
+function endDrag() {
+  const { p, target, before } = drag;
+  drag = null;
+  ghostEl.innerHTML = '';
+  p.el.classList.remove('dragging');
+  document.body.style.cursor = '';
+  if (target) {
+    p.placed = target;
+    seatOnBoard(p);
+    p.el.style.zIndex = ++zTop;
+    clack(1, 1);
+  } else {
+    sendHome(p);
+    p.el.style.zIndex = 500 + p.i;
+    clack(0.25, 1.4);
+  }
+  pushUndo(before);
+  checkWin();
+}
+
+/* ---------- Rotate / flip ---------- */
+// Applies one orientation op to p and returns a mapper for local pixel points.
+function applyOp(p, op) {
+  const W = p.w, H = p.h;
+  let M, map;
+  if (op === 'cw')  { M = [0, 1, -1, 0, H, 0]; map = (x, y) => [H * CELL - y, x]; }
+  if (op === 'ccw') { M = [0, -1, 1, 0, 0, W]; map = (x, y) => [y, W * CELL - x]; }
+  if (op === 'flip'){ M = [-1, 0, 0, 1, W, 0]; map = (x, y) => [W * CELL - x, y]; }
+  p.m = mul(M, p.m).map(v => Math.round(v * 1e6) / 1e6);
+  if (op !== 'flip') { p.w = H; p.h = W; }
+  p.cells = orientedCells(p);
+  return map;
+}
+function animateTurn(p, op, px, py) {
+  p.inner.style.transformOrigin = `${px}px ${py}px`;
+  const from = op === 'cw' ? 'rotate(-90deg)' : op === 'ccw' ? 'rotate(90deg)' : 'scaleX(-1)';
+  p.inner.animate([{ transform: from }, { transform: 'none' }], { duration: 150, easing: 'cubic-bezier(.2,.75,.3,1)' });
+}
+function shake(p) {
+  p.inner.animate([
+    { transform: 'translateX(0)' }, { transform: 'translateX(-5px)' }, { transform: 'translateX(5px)' },
+    { transform: 'translateX(-3px)' }, { transform: 'translateX(0)' }], { duration: 260 });
+}
+function turn(op, cx, cy) {
+  if (solved) return;
+  ensureAudio();
+  if (drag) {
+    const p = drag.p;
+    const [nx, ny] = applyOp(p, op)(drag.lx, drag.ly);
+    drag.lx = nx; drag.ly = ny;
+    renderPiece(p);
+    const s = toStage(lastPointer.x, lastPointer.y);
+    setTransition(p, false);
+    place(p, s.x - nx, s.y - ny, p.scale, nx, ny);
+    animateTurn(p, op, nx, ny);
+    updateGhost();
+    clack(0.18, 1.6);
+    return;
+  }
+  const hit = pieceAt(cx, cy);
+  if (!hit) return;
+  const p = hit.p;
+  if (p.placed) {
+    const before = snapshot();
+    const old = { m: p.m, w: p.w, h: p.h, cells: p.cells };
+    const [ncx, ncy] = applyOp(p, op)((hit.lc + 0.5) * CELL, (hit.lr + 0.5) * CELL);
+    const nlc = Math.floor(ncx / CELL), nlr = Math.floor(ncy / CELL);
+    const r0 = p.placed.r + hit.lr - nlr, c0 = p.placed.c + hit.lc - nlc;
+    if (!fits(p, r0, c0)) { Object.assign(p, old); shake(p); return; }
+    p.placed = { r: r0, c: c0 };
+    renderPiece(p);
+    setTransition(p, false);
+    place(p, PAD + c0 * CELL, PAD + r0 * CELL, 1, 0, 0);
+    animateTurn(p, op, ncx, ncy);
+    clack(0.6, 1.1);
+    pushUndo(before);
+    checkWin();
+  } else {
+    applyOp(p, op);
+    renderPiece(p);
+    setTransition(p, true, 150);
+    const [x, y] = homeXY(p);
+    place(p, x, y, TRAY_SCALE, 0, 0);
+    animateTurn(p, op, p.w * CELL / 2, p.h * CELL / 2);
+    clack(0.18, 1.6);
+  }
+}
+
+/* ---------- Timer ---------- */
+const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+function elapsed() { return timerElapsed + (timerRunning ? (performance.now() - timerStart) / 1000 : 0); }
+function startTimer() {
+  timerStart = performance.now(); timerRunning = true;
+  clearInterval(timerHandle);
+  timerHandle = setInterval(() => { timerEl.textContent = fmt(elapsed()); }, 250);
+}
+function stopTimer() { timerElapsed = elapsed(); timerRunning = false; clearInterval(timerHandle); timerEl.textContent = fmt(timerElapsed); }
+function resetTimer() { clearInterval(timerHandle); timerRunning = false; timerElapsed = 0; timerEl.textContent = '0:00'; }
+
+/* ---------- Win ---------- */
+function checkWin() {
+  if (solved || !pieces.every(p => p.placed)) return;
+  solved = true;
+  stopTimer();
+  const secs = Math.floor(timerElapsed);
+  let best = secs, prior = null;
+  if (!TODAY.override) {
+    const data = store.read();
+    data.solves = data.solves || {};
+    prior = data.solves[TODAY.key];
+    best = prior ? Math.min(prior.best ?? prior.time, secs) : secs;
+    data.solves[TODAY.key] = { time: secs, best, at: new Date().toISOString() };
+    store.write(data);
+  }
+  boardEl.classList.add('won');
+  updateButtons();
+  setTimeout(() => clack(0.8, 0.9), 60);
+  setTimeout(() => clack(0.8, 1.2), 200);
+  pieces.forEach((p, k) => {
+    p.inner.animate([
+      { transform: 'translateY(0) scale(1)' }, { transform: 'translateY(-10px) scale(1.04)' }, { transform: 'translateY(0) scale(1)' }],
+      { duration: 420, delay: 300 + k * 70, easing: 'ease-in-out' });
+  });
+  shavings();
+  document.getElementById('winText').textContent = `Every piece fits around ${MONTHS[TODAY.m]} ${TODAY.d}.`;
+  document.getElementById('winTime').textContent = fmt(secs);
+  document.getElementById('winBest').textContent = prior ? `Best today: ${fmt(best)}` : '';
+  setTimeout(() => document.getElementById('overlay').classList.add('show'), 1100);
+  showStatus();
+}
+function shavings() {
+  for (let i = 0; i < 46; i++) {
+    const s = document.createElement('div');
+    const wood = WOODS[i % WOODS.length];
+    const w = 6 + Math.random() * 12;
+    s.className = 'shaving';
+    s.style.left = (Math.random() * 100) + 'vw';
+    s.style.width = w + 'px'; s.style.height = (w * 0.45) + 'px';
+    s.style.background = `rgb(${wood.light.join(',')})`;
+    s.style.boxShadow = `inset 0 -2px 0 rgb(${wood.dark.join(',')})`;
+    document.body.appendChild(s);
+    const dx = (Math.random() - 0.5) * 200, rot = (Math.random() - 0.5) * 1080;
+    s.animate([
+      { transform: 'translate(0,0) rotate(0deg)', opacity: 1 },
+      { transform: `translate(${dx}px, ${window.innerHeight + 40}px) rotate(${rot}deg)`, opacity: 0.9 }],
+      { duration: 1800 + Math.random() * 1600, delay: Math.random() * 500, easing: 'cubic-bezier(.3,.1,.6,1)', fill: 'forwards' })
+      .onfinish = () => s.remove();
+  }
+}
+function showStatus() {
+  const rec = TODAY.override ? null : (store.read().solves || {})[TODAY.key];
+  statusEl.textContent = rec ? `Solved today in ${fmt(rec.time)}${rec.best != null && rec.best < rec.time ? ` (best ${fmt(rec.best)})` : ''}.` : '';
+}
+
+/* ---------- Buttons ---------- */
+const undoBtn = document.getElementById('undoBtn');
+const muteBtn = document.getElementById('muteBtn');
+function updateButtons() {
+  undoBtn.disabled = solved || !undoStack.length;
+  muteBtn.textContent = muted ? 'Sound off' : 'Sound on';
+}
+undoBtn.addEventListener('click', undo);
+document.getElementById('resetBtn').addEventListener('click', () => {
+  if (drag) return;
+  solved = false;
+  boardEl.classList.remove('won');
+  document.getElementById('overlay').classList.remove('show');
+  pieces.forEach(p => {
+    p.m = [1, 0, 0, 1, 0, 0]; p.w = p.bw; p.h = p.bh; p.cells = orientedCells(p); p.placed = null;
+    renderPiece(p); sendHome(p); p.el.style.zIndex = 500 + p.i;
+  });
+  undoStack = [];
+  resetTimer();
+  updateButtons();
+});
+muteBtn.addEventListener('click', () => {
+  muted = !muted;
+  const data = store.read(); data.muted = muted; store.write(data);
+  updateButtons();
+  if (!muted) { ensureAudio(); clack(0.6, 1); }
+});
+document.getElementById('closeWin').addEventListener('click', () => document.getElementById('overlay').classList.remove('show'));
+
+/* ---------- Input ---------- */
+window.addEventListener('pointerdown', e => {
+  if (e.button !== 0 || drag || solved) return;
+  if (document.getElementById('overlay').classList.contains('show')) return;
+  const hit = pieceAt(e.clientX, e.clientY);
+  if (!hit) return;
+  e.preventDefault();
+  pending = { p: hit.p, x: e.clientX, y: e.clientY, id: e.pointerId };
+});
+window.addEventListener('pointermove', e => {
+  lastPointer = { x: e.clientX, y: e.clientY };
+  if (pending && !drag && Math.hypot(e.clientX - pending.x, e.clientY - pending.y) > 4) {
+    const p = pending.p;
+    startDrag(p, pending.x, pending.y);
+    pending = null;
+  }
+  if (drag) { moveDrag(e.clientX, e.clientY); return; }
+  document.body.style.cursor = !solved && pieceAt(e.clientX, e.clientY) ? 'grab' : '';
+});
+const finishPointer = () => { pending = null; if (drag) endDrag(); };
+window.addEventListener('pointerup', finishPointer);
+window.addEventListener('pointercancel', finishPointer);
+window.addEventListener('blur', finishPointer);
+
+window.addEventListener('contextmenu', e => {
+  if (drag || pieceAt(e.clientX, e.clientY)) { e.preventDefault(); turn('cw', e.clientX, e.clientY); }
+  else if (stage.contains(e.target)) e.preventDefault();
+});
+window.addEventListener('dblclick', e => {
+  if (drag) return;
+  if (pieceAt(e.clientX, e.clientY)) { e.preventDefault(); turn('flip', e.clientX, e.clientY); }
+});
+let wheelAcc = 0, wheelLast = 0, wheelIdle = 0;
+window.addEventListener('wheel', e => {
+  if (solved) return;
+  if (!drag && !pieceAt(e.clientX, e.clientY)) return;
+  e.preventDefault();
+  lastPointer = { x: e.clientX, y: e.clientY };
+  clearTimeout(wheelIdle); wheelIdle = setTimeout(() => { wheelAcc = 0; }, 220);
+  wheelAcc += e.deltaY;
+  const now = performance.now();
+  if (Math.abs(wheelAcc) >= 30 && now - wheelLast > 140) {
+    turn(wheelAcc > 0 ? 'cw' : 'ccw', e.clientX, e.clientY);
+    wheelAcc = 0; wheelLast = now;
+  }
+}, { passive: false });
+window.addEventListener('keydown', e => {
+  const overlay = document.getElementById('overlay');
+  if (e.key === 'Escape' && overlay.classList.contains('show')) { overlay.classList.remove('show'); return; }
+  if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
+  if (e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === 'r') { e.preventDefault(); turn(e.shiftKey ? 'ccw' : 'cw', lastPointer.x, lastPointer.y); }
+  else if (k === 'f') { e.preventDefault(); turn('flip', lastPointer.x, lastPointer.y); }
+});
+
+/* ---------- Boot ---------- */
+function boot() {
+  document.getElementById('sub').innerHTML =
+    `${TODAY.label}. Leave <strong>${MONTHS[TODAY.m]}</strong> and <strong>${TODAY.d}</strong> showing.`;
+
+  // textures
+  const table = makeTable();
+  document.body.style.backgroundImage = `url(${table.toDataURL('image/jpeg', 0.86)})`;
+  const walnut = woodCanvas(Math.round(BOARD_PX * DPR), Math.round(BOARD_PX * DPR), WALNUT, 7, DPR, 1);
+  const walnutURL = walnut.toDataURL('image/jpeg', 0.9);
+  boardEl.style.backgroundImage = `url(${walnutURL})`;
+  trayEl.style.backgroundImage = `linear-gradient(rgba(10,5,2,0.42), rgba(10,5,2,0.42)), url(${walnutURL})`;
+  document.documentElement.style.setProperty('--walnut-img', `url(${walnutURL})`);
+
+  woodTextures = WOODS.map((wd, i) => woodCanvas(320 * DPR, 192 * DPR, wd, 1000 + i * 31, DPR, 1));
+  document.documentElement.style.setProperty('--maple-img', `url(${woodTextures[0].toDataURL('image/jpeg', 0.9)})`);
+
+  buildBoard();
+
+  pieces = PIECES.map((cells, i) => {
+    const minR = Math.min(...cells.map(c => c[0])), minC = Math.min(...cells.map(c => c[1]));
+    const base = cells.map(([r, c]) => [r - minR, c - minC]);
+    const bw = Math.max(...base.map(c => c[1])) + 1, bh = Math.max(...base.map(c => c[0])) + 1;
+    const el = document.createElement('div'); el.className = 'piece';
+    const inner = document.createElement('div'); inner.className = 'inner';
+    const cv = document.createElement('canvas');
+    inner.appendChild(cv); el.appendChild(inner); stage.appendChild(el);
+    const p = { i, base, bw, bh, w: bw, h: bh, m: [1, 0, 0, 1, 0, 0], cells: base, placed: null,
+                wood: i % WOODS.length, el, inner, cv, x: 0, y: 0, scale: TRAY_SCALE, ox: 0, oy: 0 };
+    el.title = WOODS[p.wood].name;
+    p.cells = orientedCells(p);
+    p.grain = makeGrain(p);
+    renderPiece(p);
+    const [x, y] = homeXY(p);
+    setTransition(p, false);
+    place(p, x, y, TRAY_SCALE, 0, 0);
+    el.style.zIndex = 500 + i;
+    return p;
+  });
+
+  updateButtons();
+  showStatus();
+}
+boot();
+
+// Small hook for automated checks and the piece-set search tooling.
+window.dailyGrain = {
+  today: TODAY,
+  get pieces() { return pieces.map(p => ({ cells: p.cells.map(c => c.slice()), placed: p.placed })); },
+  turn(i, op) { const p = pieces[i]; if (p.placed || (drag && drag.p === p)) return false; applyOp(p, op); renderPiece(p); sendHome(p, false); return true; },
+  place(i, r, c) {
+    const p = pieces[i];
+    if (solved || drag || !fits(p, r, c)) return false;
+    if (!timerRunning) startTimer();
+    const before = snapshot();
+    p.placed = { r, c }; seatOnBoard(p, false); p.el.style.zIndex = ++zTop;
+    pushUndo(before); checkWin();
+    return true;
+  },
+};
+</script>
+</body>
+</html>
