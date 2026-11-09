@@ -265,6 +265,7 @@
     </div>
     <div class="controls">
       <div class="timer" id="timer" title="Solve time">0:00</div>
+      <button class="btn" id="hintBtn" title="Place one piece correctly (H)">Hint</button>
       <button class="btn" id="undoBtn" title="Undo (Ctrl/Cmd+Z)">Undo</button>
       <button class="btn" id="resetBtn" title="Clear the board">Reset</button>
       <button class="btn" id="muteBtn" title="Toggle sound">Sound on</button>
@@ -819,6 +820,104 @@ function turn(op, cx, cy) {
   }
 }
 
+/* ---------- Hint solver ---------- */
+let hintsUsed = 0;
+const BOARD_CELLS = [];
+for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if (isBoardCell(r, c) && !isToday(r, c)) BOARD_CELLS.push([r, c]);
+// The 8 (or fewer, if symmetric) orientations of a piece, each with its m/w/h so it can be applied.
+function orientsOf(p) {
+  if (p.orients) return p.orients;
+  const q = { base: p.base, m: [1, 0, 0, 1, 0, 0], w: p.bw, h: p.bh };
+  const seen = new Map();
+  for (let f = 0; f < 2; f++) {
+    for (let k = 0; k < 4; k++) {
+      const cells = orientedCells(q).sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+      const key = cells.join(';');
+      if (!seen.has(key)) seen.set(key, { m: q.m.slice(), w: q.w, h: q.h, cells });
+      applyOp(q, 'cw');
+    }
+    applyOp(q, 'flip');
+  }
+  return (p.orients = [...seen.values()]);
+}
+// Backtracking fill: always cover the first empty cell. onSolution returns true to stop.
+function solveFrom(occ, free, onSolution) {
+  const covered = new Set(occ), used = new Set(), steps = [];
+  let stop = false;
+  (function rec() {
+    const cell = BOARD_CELLS.find(([r, c]) => !covered.has(r * 16 + c));
+    if (!cell) { stop = !!onSolution(steps.slice()); return; }
+    const [R, C] = cell;
+    for (const p of free) {
+      if (used.has(p)) continue;
+      for (const o of orientsOf(p)) {
+        const r0 = R - o.cells[0][0], c0 = C - o.cells[0][1];
+        const abs = o.cells.map(([r, c]) => [r + r0, c + c0]);
+        if (!abs.every(([r, c]) => isBoardCell(r, c) && !isToday(r, c) && !covered.has(r * 16 + c))) continue;
+        used.add(p); abs.forEach(([r, c]) => covered.add(r * 16 + c)); steps.push({ p, o, r: r0, c: c0 });
+        rec();
+        used.delete(p); abs.forEach(([r, c]) => covered.delete(r * 16 + c)); steps.pop();
+        if (stop) return;
+      }
+    }
+  })();
+}
+const cellKey = (cells, r0, c0) => cells.map(([r, c]) => (r + r0) * 16 + (c + c0)).sort((a, b) => a - b).join(',');
+function glow(p) {
+  p.inner.animate([
+    { filter: 'drop-shadow(0 0 0 rgba(255,200,110,0))' },
+    { filter: 'drop-shadow(0 0 14px rgba(255,200,110,0.95))' },
+    { filter: 'drop-shadow(0 0 0 rgba(255,200,110,0))' }], { duration: 1100, easing: 'ease-in-out' });
+}
+function flashStatus(text) {
+  statusEl.textContent = text;
+  clearTimeout(flashStatus.t);
+  flashStatus.t = setTimeout(showStatus, 3500);
+}
+function hint() {
+  if (solved || drag) return;
+  ensureAudio();
+  const placed = pieces.filter(p => p.placed), free = pieces.filter(p => !p.placed);
+  let sol = null;
+  solveFrom(occupied(null), free, s => { sol = s; return true; });
+  const before = snapshot();
+  if (sol) {
+    // Place the piece that fills the first open cell.
+    const { p, o, r, c } = sol[0];
+    if (!timerRunning) startTimer();
+    p.m = o.m.slice(); p.w = o.w; p.h = o.h; p.cells = orientedCells(p);
+    renderPiece(p);
+    p.placed = { r, c };
+    seatOnBoard(p);
+    p.el.style.zIndex = ++zTop;
+    hintsUsed++;
+    clack(1, 1);
+    glow(p);
+    pushUndo(before);
+    checkWin();
+    return;
+  }
+  // The pieces already on the board can't all stay. Find the full solution that keeps
+  // the most of them, and send back one piece that doesn't belong.
+  let best = null, bestScore = -1;
+  solveFrom([], pieces, s => {
+    const score = s.filter(st => st.p.placed && cellKey(st.p.cells, st.p.placed.r, st.p.placed.c) === cellKey(st.o.cells, st.r, st.c)).length;
+    if (score > bestScore) { bestScore = score; best = s; }
+    return bestScore === placed.length - 1;
+  });
+  const wrong = best && best.find(st => st.p.placed && cellKey(st.p.cells, st.p.placed.r, st.p.placed.c) !== cellKey(st.o.cells, st.r, st.c));
+  if (!wrong) return;
+  const p = wrong.p;
+  glow(p);
+  p.placed = null;
+  sendHome(p);
+  p.el.style.zIndex = 500 + p.i;
+  hintsUsed++;
+  clack(0.4, 0.8);
+  pushUndo(before);
+  flashStatus('That piece was blocking a solution, so it went back to the tray.');
+}
+
 /* ---------- Timer ---------- */
 const fmt = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
 function elapsed() { return timerElapsed + (timerRunning ? (performance.now() - timerStart) / 1000 : 0); }
@@ -855,7 +954,8 @@ function checkWin() {
       { duration: 420, delay: 300 + k * 70, easing: 'ease-in-out' });
   });
   shavings();
-  document.getElementById('winText').textContent = `Every piece fits around ${MONTHS[TODAY.m]} ${TODAY.d}.`;
+  document.getElementById('winText').textContent = `Every piece fits around ${MONTHS[TODAY.m]} ${TODAY.d}.` +
+    (hintsUsed ? ` (${hintsUsed} hint${hintsUsed > 1 ? 's' : ''})` : '');
   document.getElementById('winTime').textContent = fmt(secs);
   document.getElementById('winBest').textContent = prior ? `Best today: ${fmt(best)}` : '';
   setTimeout(() => document.getElementById('overlay').classList.add('show'), 1100);
@@ -888,11 +988,14 @@ function showStatus() {
 /* ---------- Buttons ---------- */
 const undoBtn = document.getElementById('undoBtn');
 const muteBtn = document.getElementById('muteBtn');
+const hintBtn = document.getElementById('hintBtn');
 function updateButtons() {
   undoBtn.disabled = solved || !undoStack.length;
+  hintBtn.disabled = solved;
   muteBtn.textContent = muted ? 'Sound off' : 'Sound on';
 }
 undoBtn.addEventListener('click', undo);
+hintBtn.addEventListener('click', hint);
 document.getElementById('resetBtn').addEventListener('click', () => {
   if (drag) return;
   solved = false;
@@ -903,6 +1006,7 @@ document.getElementById('resetBtn').addEventListener('click', () => {
     renderPiece(p); sendHome(p); p.el.style.zIndex = 500 + p.i;
   });
   undoStack = [];
+  hintsUsed = 0;
   resetTimer();
   updateButtons();
 });
@@ -968,6 +1072,7 @@ window.addEventListener('keydown', e => {
   const k = e.key.toLowerCase();
   if (k === 'r') { e.preventDefault(); turn(e.shiftKey ? 'ccw' : 'cw', lastPointer.x, lastPointer.y); }
   else if (k === 'f') { e.preventDefault(); turn('flip', lastPointer.x, lastPointer.y); }
+  else if (k === 'h') { e.preventDefault(); hint(); }
 });
 
 /* ---------- Boot ---------- */

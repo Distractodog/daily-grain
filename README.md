@@ -14,6 +14,7 @@ Open `index.html` in a browser. Nothing to install.
 | Rotate | Right-click or scroll | R |
 | Flip | Double-click | F |
 | Undo | Undo button | Ctrl/Cmd+Z |
+| Hint | Hint button | H |
 
 ## The board
 
