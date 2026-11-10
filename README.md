@@ -15,6 +15,7 @@ Open `index.html` in a browser. Nothing to install.
 | Flip | Double-click | F |
 | Undo | Undo button | Ctrl/Cmd+Z |
 | Hint | Hint button | H |
+| Play a past day | Calendar button | C |
 
 ## The board
 

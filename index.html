@@ -54,7 +54,8 @@
   .sub strong { color: #ffd896; font-weight: 600; }
   .status { margin: 6px 0 0; font-size: 15px; color: #ffd896; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6); min-height: 1em; }
 
-  .controls { display: flex; align-items: center; gap: 10px; }
+  .controls { display: flex; align-items: center; gap: 10px; flex-shrink: 0; }
+  .controls .btn { white-space: nowrap; }
   .timer {
     font-variant-numeric: tabular-nums;
     font-size: 26px;
@@ -252,6 +253,51 @@
   .card .big { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; margin: 10px 0; color: #6a320c; }
   .card .btn { margin-top: 14px; background: linear-gradient(#5a3820, #3d2414); color: #f6e3c0; text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.6); }
 
+  .sub a { color: #ffd896; margin-left: 6px; font-size: 15px; }
+
+  #calOverlay {
+    position: fixed; inset: 0; z-index: 200000; display: none;
+    align-items: center; justify-content: center; background: rgba(20, 10, 4, 0.45);
+  }
+  #calOverlay.show { display: flex; animation: fadeIn 0.2s ease-out; }
+  .card.cal { width: 440px; padding: 24px 26px 22px; }
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
+  .cal-head h2 { margin: 0; font-size: 28px; }
+  .cal-nav {
+    width: 40px; height: 40px; border-radius: 10px; cursor: pointer;
+    font: 800 24px/1 'Fraunces', Georgia, serif; color: #f6e3c0;
+    border: 1px solid rgba(40, 20, 8, 0.6);
+    background: linear-gradient(#5a3820, #3d2414);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 180, 0.2), 0 2px 4px rgba(0, 0, 0, 0.35);
+  }
+  .cal-nav:disabled { opacity: 0.35; cursor: default; }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; }
+  .cal-wd { font-size: 13px; font-weight: 600; color: rgba(59, 34, 15, 0.7); padding-bottom: 2px; }
+  .cal-day {
+    position: relative; aspect-ratio: 1; border-radius: 8px; cursor: pointer;
+    font: 600 16px 'Fraunces', Georgia, serif; color: #f0d6a8;
+    border: none;
+    background: linear-gradient(rgba(0, 0, 0, 0.22), rgba(0, 0, 0, 0.22)), var(--walnut-img, #3a2416);
+    background-size: 440px 440px;
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.6), 0 1px 0 rgba(255, 245, 225, 0.5);
+    text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.8);
+  }
+  .cal-day:hover:not(:disabled) { filter: brightness(1.25); }
+  .cal-day:disabled { opacity: 0.3; cursor: default; }
+  .cal-day.solved::after {
+    content: ''; position: absolute; right: 5px; bottom: 5px; width: 8px; height: 8px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #ffe7b0, #e9a648 60%, #a8631f);
+    box-shadow: 0 0 6px rgba(255, 190, 90, 0.8);
+  }
+  .cal-day.is-today { box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.6), 0 0 0 2px #e9b45c; }
+  .cal-day.current {
+    color: #4a2708; text-shadow: 0 1px 0 rgba(255, 240, 205, 0.55);
+    background: radial-gradient(circle at 50% 38%, #ffe2a6 0%, #f0b45a 50%, #b8732a 100%);
+  }
+  .cal-count { margin: 14px 0 0; font-size: 15px; }
+  .cal-foot { display: flex; justify-content: center; gap: 10px; }
+  .card.cal .btn { margin-top: 12px; }
+
   .shaving { position: fixed; top: -20px; z-index: 150000; pointer-events: none; border-radius: 50% 50% 40% 40%; }
 </style>
 </head>
@@ -265,6 +311,7 @@
     </div>
     <div class="controls">
       <div class="timer" id="timer" title="Solve time">0:00</div>
+      <button class="btn" id="calBtn" title="Play a past day (C)">Calendar</button>
       <button class="btn" id="hintBtn" title="Place one piece correctly (H)">Hint</button>
       <button class="btn" id="undoBtn" title="Undo (Ctrl/Cmd+Z)">Undo</button>
       <button class="btn" id="resetBtn" title="Clear the board">Reset</button>
@@ -290,8 +337,24 @@
     <p id="winText"></p>
     <div class="big" id="winTime">0:00</div>
     <p id="winBest"></p>
-    <p>A new date waits tomorrow.</p>
+    <p id="winNext">A new date waits tomorrow.</p>
     <button class="btn" id="closeWin">Admire the board</button>
+  </div>
+</div>
+
+<div id="calOverlay">
+  <div class="card cal">
+    <div class="cal-head">
+      <button class="cal-nav" id="calPrev" title="Previous month">‹</button>
+      <h2 id="calTitle"></h2>
+      <button class="cal-nav" id="calNext" title="Next month">›</button>
+    </div>
+    <div class="cal-grid" id="calGrid"></div>
+    <p class="cal-count" id="calCount"></p>
+    <div class="cal-foot">
+      <button class="btn" id="calToday">Today</button>
+      <button class="btn" id="calClose">Close</button>
+    </div>
   </div>
 </div>
 
@@ -347,20 +410,27 @@ function cellLabel(r, c) {
 }
 
 /* ---------- Today ---------- */
-const TODAY = (() => {
-  const now = new Date();
-  let m = now.getMonth(), d = now.getDate(), override = false;
+// TODAY is the puzzle date being played. It starts as the real date and the calendar can change it.
+const pad2 = n => String(n).padStart(2, '0');
+const dateKey = dt => `${dt.getFullYear()}-${pad2(dt.getMonth() + 1)}-${pad2(dt.getDate())}`;
+const realTodayKey = () => dateKey(new Date());
+function makeDay(dt, override = false) {
+  const m = dt.getMonth(), d = dt.getDate();
+  const key = dateKey(dt);
+  const monthCell = [m < 6 ? 0 : 1, m % 6];
+  const dayCell = d <= 28 ? [2 + Math.floor((d - 1) / 7), (d - 1) % 7] : [6, d - 29];
+  const weekday = override ? '' : dt.toLocaleDateString(undefined, { weekday: 'long' }) + ', ';
+  const year = !override && dt.getFullYear() !== new Date().getFullYear() ? `, ${dt.getFullYear()}` : '';
+  return { m, d, key, date: new Date(dt.getFullYear(), m, d), override, isReal: !override && key === realTodayKey(),
+           monthCell, dayCell, label: `${weekday}${MONTH_NAMES[m]} ${d}${year}` };
+}
+let TODAY = (() => {
   const q = new URLSearchParams(location.search).get('date');   // e.g. ?date=2-29 for testing
   if (q && /^\d{1,2}-\d{1,2}$/.test(q)) {
     const [qm, qd] = q.split('-').map(Number);
-    if (qm >= 1 && qm <= 12 && qd >= 1 && qd <= 31) { m = qm - 1; d = qd; override = true; }
+    if (qm >= 1 && qm <= 12 && qd >= 1 && qd <= 31) return makeDay(new Date(2024, qm - 1, qd), true);
   }
-  const pad = n => String(n).padStart(2, '0');
-  const key = `${now.getFullYear()}-${pad(m + 1)}-${pad(d)}`;
-  const monthCell = [m < 6 ? 0 : 1, m % 6];
-  const dayCell = d <= 28 ? [2 + Math.floor((d - 1) / 7), (d - 1) % 7] : [6, d - 29];
-  const weekday = override ? '' : now.toLocaleDateString(undefined, { weekday: 'long' }) + ', ';
-  return { m, d, key, override, monthCell, dayCell, label: `${weekday}${MONTH_NAMES[m]} ${d}` };
+  return makeDay(new Date());
 })();
 const isToday = (r, c) =>
   (r === TODAY.monthCell[0] && c === TODAY.monthCell[1]) || (r === TODAY.dayCell[0] && c === TODAY.dayCell[1]);
@@ -516,6 +586,7 @@ function buildBoard() {
     if (!isBoardCell(r, c)) continue;
     const el = document.createElement('div');
     el.className = 'cell' + (r <= 1 ? ' month' : '') + (isToday(r, c) ? ' today' : '');
+    el.dataset.r = r; el.dataset.c = c;
     el.style.left = (PAD + c * CELL + 3) + 'px';
     el.style.top = (PAD + r * CELL + 3) + 'px';
     el.textContent = cellLabel(r, c);
@@ -822,8 +893,11 @@ function turn(op, cx, cy) {
 
 /* ---------- Hint solver ---------- */
 let hintsUsed = 0;
-const BOARD_CELLS = [];
-for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if (isBoardCell(r, c) && !isToday(r, c)) BOARD_CELLS.push([r, c]);
+function openCells() {
+  const out = [];
+  for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if (isBoardCell(r, c) && !isToday(r, c)) out.push([r, c]);
+  return out;
+}
 // The 8 (or fewer, if symmetric) orientations of a piece, each with its m/w/h so it can be applied.
 function orientsOf(p) {
   if (p.orients) return p.orients;
@@ -842,10 +916,10 @@ function orientsOf(p) {
 }
 // Backtracking fill: always cover the first empty cell. onSolution returns true to stop.
 function solveFrom(occ, free, onSolution) {
-  const covered = new Set(occ), used = new Set(), steps = [];
+  const covered = new Set(occ), used = new Set(), steps = [], cells = openCells();
   let stop = false;
   (function rec() {
-    const cell = BOARD_CELLS.find(([r, c]) => !covered.has(r * 16 + c));
+    const cell = cells.find(([r, c]) => !covered.has(r * 16 + c));
     if (!cell) { stop = !!onSolution(steps.slice()); return; }
     const [R, C] = cell;
     for (const p of free) {
@@ -982,7 +1056,7 @@ function shavings() {
 }
 function showStatus() {
   const rec = TODAY.override ? null : (store.read().solves || {})[TODAY.key];
-  statusEl.textContent = rec ? `Solved today in ${fmt(rec.time)}${rec.best != null && rec.best < rec.time ? ` (best ${fmt(rec.best)})` : ''}.` : '';
+  statusEl.textContent = rec ? `Solved${TODAY.isReal ? ' today' : ''} in ${fmt(rec.time)}${rec.best != null && rec.best < rec.time ? ` (best ${fmt(rec.best)})` : ''}.` : '';
 }
 
 /* ---------- Buttons ---------- */
@@ -996,7 +1070,8 @@ function updateButtons() {
 }
 undoBtn.addEventListener('click', undo);
 hintBtn.addEventListener('click', hint);
-document.getElementById('resetBtn').addEventListener('click', () => {
+document.getElementById('resetBtn').addEventListener('click', resetBoard);
+function resetBoard() {
   if (drag) return;
   solved = false;
   boardEl.classList.remove('won');
@@ -1009,7 +1084,72 @@ document.getElementById('resetBtn').addEventListener('click', () => {
   hintsUsed = 0;
   resetTimer();
   updateButtons();
-});
+}
+
+/* ---------- Calendar: play past dates ---------- */
+function setSubtitle() {
+  document.getElementById('sub').innerHTML =
+    `${TODAY.label}. Leave <strong>${MONTHS[TODAY.m]}</strong> and <strong>${TODAY.d}</strong> showing.` +
+    (TODAY.isReal || TODAY.override ? '' : ` <a href="#" id="backToday">Back to today</a>`);
+  const back = document.getElementById('backToday');
+  if (back) back.addEventListener('click', e => { e.preventDefault(); loadDate(new Date()); });
+  document.getElementById('winNext').textContent = TODAY.isReal ? 'A new date waits tomorrow.' : 'Pick another day from the calendar.';
+}
+function loadDate(dt) {
+  if (drag) return;
+  if (dateKey(dt) > realTodayKey()) return;            // no peeking at future days
+  TODAY = makeDay(dt);
+  boardEl.querySelectorAll('.cell').forEach(el => el.classList.toggle('today', isToday(+el.dataset.r, +el.dataset.c)));
+  resetBoard();
+  setSubtitle();
+  showStatus();
+  closeCalendar();
+}
+
+const calEl = document.getElementById('calOverlay');
+let calMonth = null;                                   // first day of the month on display
+const solves = () => (store.read().solves || {});
+function openCalendar() {
+  if (drag) return;
+  calMonth = new Date(TODAY.date.getFullYear(), TODAY.date.getMonth(), 1);
+  renderCalendar();
+  calEl.classList.add('show');
+}
+function closeCalendar() { calEl.classList.remove('show'); }
+function renderCalendar() {
+  const y = calMonth.getFullYear(), mo = calMonth.getMonth();
+  const now = new Date(), todayKey = realTodayKey(), done = solves();
+  document.getElementById('calTitle').textContent = `${MONTH_NAMES[mo]} ${y}`;
+  document.getElementById('calNext').disabled = y > now.getFullYear() || (y === now.getFullYear() && mo >= now.getMonth());
+  const grid = document.getElementById('calGrid');
+  grid.innerHTML = '';
+  ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].forEach(w => {
+    const h = document.createElement('div'); h.className = 'cal-wd'; h.textContent = w; grid.appendChild(h);
+  });
+  for (let i = 0; i < calMonth.getDay(); i++) grid.appendChild(document.createElement('div'));
+  const days = new Date(y, mo + 1, 0).getDate();
+  let solvedCount = 0, playable = 0;
+  for (let d = 1; d <= days; d++) {
+    const dt = new Date(y, mo, d), key = dateKey(dt);
+    const b = document.createElement('button');
+    b.className = 'cal-day';
+    b.textContent = d;
+    const future = key > todayKey;
+    if (future) b.disabled = true; else playable++;
+    if (done[key]) { b.classList.add('solved'); b.title = `Solved in ${fmt(done[key].best ?? done[key].time)}`; solvedCount++; }
+    if (key === todayKey) b.classList.add('is-today');
+    if (key === TODAY.key && !TODAY.override) b.classList.add('current');
+    b.addEventListener('click', () => loadDate(dt));
+    grid.appendChild(b);
+  }
+  document.getElementById('calCount').textContent = playable ? `${solvedCount} of ${playable} solved this month` : '';
+}
+document.getElementById('calBtn').addEventListener('click', openCalendar);
+document.getElementById('calClose').addEventListener('click', closeCalendar);
+document.getElementById('calToday').addEventListener('click', () => loadDate(new Date()));
+document.getElementById('calPrev').addEventListener('click', () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); });
+document.getElementById('calNext').addEventListener('click', () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); });
+calEl.addEventListener('click', e => { if (e.target === calEl) closeCalendar(); });
 muteBtn.addEventListener('click', () => {
   muted = !muted;
   const data = store.read(); data.muted = muted; store.write(data);
@@ -1021,7 +1161,7 @@ document.getElementById('closeWin').addEventListener('click', () => document.get
 /* ---------- Input ---------- */
 window.addEventListener('pointerdown', e => {
   if (e.button !== 0 || drag || solved) return;
-  if (document.getElementById('overlay').classList.contains('show')) return;
+  if (document.getElementById('overlay').classList.contains('show') || calEl.classList.contains('show')) return;
   const hit = pieceAt(e.clientX, e.clientY);
   if (!hit) return;
   e.preventDefault();
@@ -1067,18 +1207,20 @@ window.addEventListener('wheel', e => {
 window.addEventListener('keydown', e => {
   const overlay = document.getElementById('overlay');
   if (e.key === 'Escape' && overlay.classList.contains('show')) { overlay.classList.remove('show'); return; }
+  if (e.key === 'Escape' && calEl.classList.contains('show')) { closeCalendar(); return; }
+  if (calEl.classList.contains('show')) return;
   if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
   if (k === 'r') { e.preventDefault(); turn(e.shiftKey ? 'ccw' : 'cw', lastPointer.x, lastPointer.y); }
   else if (k === 'f') { e.preventDefault(); turn('flip', lastPointer.x, lastPointer.y); }
   else if (k === 'h') { e.preventDefault(); hint(); }
+  else if (k === 'c') { e.preventDefault(); openCalendar(); }
 });
 
 /* ---------- Boot ---------- */
 function boot() {
-  document.getElementById('sub').innerHTML =
-    `${TODAY.label}. Leave <strong>${MONTHS[TODAY.m]}</strong> and <strong>${TODAY.d}</strong> showing.`;
+  setSubtitle();
 
   // textures
   const table = makeTable();
@@ -1123,6 +1265,8 @@ boot();
 // Small hook for automated checks and the piece-set search tooling.
 window.dailyGrain = {
   today: TODAY,
+  loadDate: (y, m, d) => loadDate(new Date(y, m - 1, d)),
+  get date() { return TODAY.key; },
   get pieces() { return pieces.map(p => ({ cells: p.cells.map(c => c.slice()), placed: p.placed })); },
   turn(i, op) { const p = pieces[i]; if (p.placed || (drag && drag.p === p)) return false; applyOp(p, op); renderPiece(p); sendHome(p, false); return true; },
   place(i, r, c) {
