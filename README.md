@@ -11,7 +11,7 @@ Open `index.html` in a browser. Nothing to install.
 | Action | Mouse | Key |
 |---|---|---|
 | Move a piece | Drag | |
-| Rotate | Right-click or scroll | R |
+| Rotate | Right-click | R |
 | Flip | Double-click | F |
 | Undo | Undo button | Ctrl/Cmd+Z |
 | Hint (number depends on difficulty) | Hint button | H |
@@ -33,7 +33,9 @@ Hints used are saved per date and per mode, so Reset and reloading don't refill 
 
 Solved days, hints and settings are saved in the browser (localStorage). There's no server. To move your history to another browser, copy the save code from Settings and load it there.
 
-The music is a marimba tune generated live by the browser, with no audio files. It starts after your first click.
+The music is a marimba tune generated live by the browser, with no audio files: one steady flowing arpeggio over a slow four-chord loop. It starts after your first click.
+
+The font is Libre Baskerville, stored in `fonts/` (SIL Open Font License, see `fonts/OFL.txt`), so the game needs no internet connection.
 
 ## The board
 
