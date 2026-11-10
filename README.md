@@ -14,7 +14,7 @@ Open `index.html` in a browser. Nothing to install.
 | Rotate | Right-click or scroll | R |
 | Flip | Double-click | F |
 | Undo | Undo button | Ctrl/Cmd+Z |
-| Hint | Hint button | H |
+| Hint (2 per puzzle) | Hint button | H |
 | Play a past day | Calendar button | C |
 
 ## The board

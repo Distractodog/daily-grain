@@ -892,7 +892,21 @@ function turn(op, cx, cy) {
 }
 
 /* ---------- Hint solver ---------- */
+// Each date gets a fixed number of hints. Used hints are saved per date, so Reset,
+// Undo and reloading the page don't refill them.
+const HINTS_PER_PUZZLE = 2;
 let hintsUsed = 0;
+function loadHints() {
+  hintsUsed = TODAY.override ? 0 : ((store.read().hints || {})[TODAY.key] || 0);
+}
+function spendHint() {
+  hintsUsed++;
+  if (TODAY.override) return;
+  const data = store.read();
+  data.hints = data.hints || {};
+  data.hints[TODAY.key] = hintsUsed;
+  store.write(data);
+}
 function openCells() {
   const out = [];
   for (let r = 0; r < 7; r++) for (let c = 0; c < 7; c++) if (isBoardCell(r, c) && !isToday(r, c)) out.push([r, c]);
@@ -950,6 +964,7 @@ function flashStatus(text) {
 }
 function hint() {
   if (solved || drag) return;
+  if (hintsUsed >= HINTS_PER_PUZZLE) { flashStatus('No hints left for this puzzle.'); return; }
   ensureAudio();
   const placed = pieces.filter(p => p.placed), free = pieces.filter(p => !p.placed);
   let sol = null;
@@ -964,7 +979,7 @@ function hint() {
     p.placed = { r, c };
     seatOnBoard(p);
     p.el.style.zIndex = ++zTop;
-    hintsUsed++;
+    spendHint();
     clack(1, 1);
     glow(p);
     pushUndo(before);
@@ -986,7 +1001,8 @@ function hint() {
   p.placed = null;
   sendHome(p);
   p.el.style.zIndex = 500 + p.i;
-  hintsUsed++;
+  spendHint();
+  updateButtons();
   clack(0.4, 0.8);
   pushUndo(before);
   flashStatus('That piece was blocking a solution, so it went back to the tray.');
@@ -1065,7 +1081,10 @@ const muteBtn = document.getElementById('muteBtn');
 const hintBtn = document.getElementById('hintBtn');
 function updateButtons() {
   undoBtn.disabled = solved || !undoStack.length;
-  hintBtn.disabled = solved;
+  const left = Math.max(0, HINTS_PER_PUZZLE - hintsUsed);
+  hintBtn.disabled = solved || left === 0;
+  hintBtn.textContent = `Hint (${left})`;
+  hintBtn.title = left ? `Place one piece correctly (H). ${left} left for this puzzle.` : 'No hints left for this puzzle.';
   muteBtn.textContent = muted ? 'Sound off' : 'Sound on';
 }
 undoBtn.addEventListener('click', undo);
@@ -1081,7 +1100,6 @@ function resetBoard() {
     renderPiece(p); sendHome(p); p.el.style.zIndex = 500 + p.i;
   });
   undoStack = [];
-  hintsUsed = 0;
   resetTimer();
   updateButtons();
 }
@@ -1100,6 +1118,7 @@ function loadDate(dt) {
   if (dateKey(dt) > realTodayKey()) return;            // no peeking at future days
   TODAY = makeDay(dt);
   boardEl.querySelectorAll('.cell').forEach(el => el.classList.toggle('today', isToday(+el.dataset.r, +el.dataset.c)));
+  loadHints();
   resetBoard();
   setSubtitle();
   showStatus();
@@ -1221,6 +1240,7 @@ window.addEventListener('keydown', e => {
 /* ---------- Boot ---------- */
 function boot() {
   setSubtitle();
+  loadHints();
 
   // textures
   const table = makeTable();
