@@ -1266,7 +1266,6 @@ function boot() {
     inner.appendChild(cv); el.appendChild(inner); stage.appendChild(el);
     const p = { i, base, bw, bh, w: bw, h: bh, m: [1, 0, 0, 1, 0, 0], cells: base, placed: null,
                 wood: i % WOODS.length, el, inner, cv, x: 0, y: 0, scale: TRAY_SCALE, ox: 0, oy: 0 };
-    el.title = WOODS[p.wood].name;
     p.cells = orientedCells(p);
     p.grain = makeGrain(p);
     renderPiece(p);
