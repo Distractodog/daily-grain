@@ -255,11 +255,69 @@
 
   .sub a { color: #ffd896; margin-left: 6px; font-size: 15px; }
 
-  #calOverlay {
+  #calOverlay, #setOverlay {
     position: fixed; inset: 0; z-index: 200000; display: none;
     align-items: center; justify-content: center; background: rgba(20, 10, 4, 0.45);
   }
-  #calOverlay.show { display: flex; animation: fadeIn 0.2s ease-out; }
+  #calOverlay.show, #setOverlay.show { display: flex; animation: fadeIn 0.2s ease-out; }
+
+  .card.set { width: 460px; padding: 26px 30px 22px; text-align: left; }
+  .card.set h2 { text-align: center; font-size: 32px; margin-bottom: 14px; }
+  .card.set h3 { margin: 20px 0 4px; font-size: 20px; font-weight: 800; }
+  .set-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 0; border-bottom: 1px solid rgba(90, 50, 20, 0.22); font-size: 17px; font-weight: 600;
+  }
+  .switch {
+    position: relative; width: 58px; height: 32px; border-radius: 16px; cursor: pointer; padding: 0;
+    border: 1px solid rgba(40, 20, 8, 0.6);
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), var(--walnut-img, #3a2416);
+    background-size: 300px 300px;
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.6);
+    transition: background-color 0.2s;
+  }
+  .switch i {
+    position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #f6e3c0, #c9a46c 70%, #8a6236);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    transition: transform 0.18s cubic-bezier(.3,.8,.3,1), background 0.18s;
+  }
+  .switch[aria-checked="true"] i {
+    transform: translateX(26px);
+    background: radial-gradient(circle at 40% 35%, #ffe7b0, #e9a648 60%, #a8631f);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5), 0 0 10px rgba(255, 180, 80, 0.7);
+  }
+  .switch:focus-visible { outline: 2px solid #6a320c; outline-offset: 2px; }
+  input[type="range"] { width: 180px; accent-color: #8a4a18; cursor: pointer; }
+  .set-diff { padding: 4px 0 12px; border-bottom: 1px solid rgba(90, 50, 20, 0.22); font-size: 17px; font-weight: 600; }
+  .seg { display: flex; margin: 8px 0 8px; border-radius: 10px; overflow: hidden; border: 1px solid rgba(40, 20, 8, 0.6); }
+  .seg button {
+    flex: 1; padding: 8px 0 9px; cursor: pointer; border: none;
+    font: 600 15px 'Fraunces', Georgia, serif; color: #f0d6a8;
+    background: linear-gradient(rgba(0, 0, 0, 0.25), rgba(0, 0, 0, 0.25)), var(--walnut-img, #3a2416);
+    background-size: 460px 460px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+  }
+  .seg button + button { border-left: 1px solid rgba(0, 0, 0, 0.45); }
+  .seg button[aria-pressed="true"] {
+    color: #4a2708; text-shadow: 0 1px 0 rgba(255, 240, 205, 0.55); box-shadow: none;
+    background: radial-gradient(circle at 50% 30%, #ffe2a6 0%, #f0b45a 60%, #c07a30 100%);
+  }
+  .sub .mode { color: #ffd896; font-weight: 600; }
+  .set-note { margin: 0 0 8px; font-size: 14px; line-height: 1.45; color: rgba(59, 34, 15, 0.85); }
+  #saveCode {
+    width: 100%; resize: none; border-radius: 8px; padding: 8px 10px;
+    font: 12px/1.4 ui-monospace, Menlo, monospace; color: #f0d6a8;
+    border: 1px solid rgba(40, 20, 8, 0.6);
+    background: linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)), var(--walnut-img, #3a2416);
+    background-size: 460px 460px;
+    box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.6);
+    user-select: text; -webkit-user-select: text;
+  }
+  .set-actions { display: flex; align-items: center; gap: 10px; margin-top: 8px; }
+  .btn.small { font-size: 14px; padding: 6px 12px 7px; }
+  #codeMsg { font-size: 14px; font-weight: 600; color: #6a320c; }
+  .card.set .cal-foot .btn { margin-top: 18px; }
   .card.cal { width: 440px; padding: 24px 26px 22px; }
   .cal-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px; }
   .cal-head h2 { margin: 0; font-size: 28px; }
@@ -315,7 +373,7 @@
       <button class="btn" id="hintBtn" title="Place one piece correctly (H)">Hint</button>
       <button class="btn" id="undoBtn" title="Undo (Ctrl/Cmd+Z)">Undo</button>
       <button class="btn" id="resetBtn" title="Clear the board">Reset</button>
-      <button class="btn" id="muteBtn" title="Toggle sound">Sound on</button>
+      <button class="btn" id="setBtn" title="Sound, music and save code">Settings</button>
     </div>
   </header>
 
@@ -358,20 +416,55 @@
   </div>
 </div>
 
+<div id="setOverlay">
+  <div class="card set">
+    <h2>Settings</h2>
+    <div class="set-diff">
+      <span>Difficulty</span>
+      <div class="seg" id="diffSeg"></div>
+      <p class="set-note" id="diffNote"></p>
+    </div>
+    <div class="set-row">
+      <span>Sound effects</span>
+      <button class="switch" id="sfxSwitch" role="switch" aria-checked="true"><i></i></button>
+    </div>
+    <div class="set-row">
+      <span>Music</span>
+      <button class="switch" id="musicSwitch" role="switch" aria-checked="true"><i></i></button>
+    </div>
+    <div class="set-row">
+      <label for="musicVol">Music volume</label>
+      <input type="range" id="musicVol" min="0" max="100" step="1">
+    </div>
+    <h3>Save code</h3>
+    <p class="set-note">Your solved days are saved in this browser. Copy this code to move them to another browser, or paste a code here and load it.</p>
+    <textarea id="saveCode" spellcheck="false" rows="3"></textarea>
+    <div class="set-actions">
+      <button class="btn small" id="copyCode">Copy code</button>
+      <button class="btn small" id="loadCode">Load code</button>
+      <span id="codeMsg"></span>
+    </div>
+    <div class="cal-foot">
+      <button class="btn" id="setClose">Close</button>
+    </div>
+  </div>
+</div>
+
 <script>
 'use strict';
 
-// PIECES: each piece is a list of [row, col] cells. Replaced by tools/search.js output.
-const PIECES = [
-  [[0,0],[1,0],[1,1],[2,0],[3,0]],
-  [[0,0],[0,1],[1,0],[1,1],[2,0]],
-  [[0,0],[0,1],[0,2],[1,0],[2,0]],
-  [[0,0],[0,1],[1,0],[2,0],[3,0]],
-  [[0,1],[1,0],[1,1],[2,0],[3,0]],
-  [[0,0],[0,1],[1,0],[2,0],[2,1]],
-  [[0,1],[0,2],[1,1],[2,0],[2,1]],
-  [[0,0],[1,0],[1,1],[1,2],[2,0],[3,0]]
-];
+// DIFFICULTIES: each mode has its own fixed piece set (from tools/search.js, see
+// tools/difficulties.json). Every set solves all 366 dates. Each piece is a list of [row, col] cells.
+const DIFFICULTIES = {
+  easy: { name: 'Easy', hints: 3, blurb: 'Lots of ways to solve each day.', // solutions per day: min 40, median 134, max 544
+    pieces: [[[0,0],[0,1],[1,0],[2,0],[3,0]],[[0,0],[0,1],[1,0],[1,1],[2,0]],[[0,1],[0,2],[1,0],[1,1],[2,1]],[[0,0],[1,0],[1,1],[2,0],[3,0]],[[0,0],[0,1],[0,2],[1,0],[2,0]],[[0,0],[0,1],[1,0],[2,0],[2,1]],[[0,1],[1,0],[1,1],[2,0],[3,0]],[[0,0],[0,1],[1,0],[1,1],[2,0],[3,0]]] },
+  normal: { name: 'Normal', hints: 2, blurb: 'The classic challenge.', // solutions per day: min 5, median 28, max 91
+    pieces: [[[0,0],[1,0],[1,1],[2,0],[3,0]],[[0,0],[0,1],[1,0],[1,1],[2,0]],[[0,0],[0,1],[0,2],[1,0],[2,0]],[[0,0],[0,1],[1,0],[2,0],[3,0]],[[0,1],[1,0],[1,1],[2,0],[3,0]],[[0,0],[0,1],[1,0],[2,0],[2,1]],[[0,1],[0,2],[1,1],[2,0],[2,1]],[[0,0],[1,0],[1,1],[1,2],[2,0],[3,0]]] },
+  hard: { name: 'Hard', hints: 1, blurb: 'Fewer solutions; some days have only two.', // solutions per day: min 2, median 17, max 100
+    pieces: [[[0,0],[0,1],[0,2],[1,0],[2,0]],[[0,0],[0,1],[0,2],[1,1],[2,1]],[[0,0],[0,1],[1,0],[1,1],[2,0]],[[0,1],[0,2],[1,0],[1,1],[2,1]],[[0,1],[1,0],[1,1],[2,0],[3,0]],[[0,0],[1,0],[1,1],[2,0],[3,0]],[[0,0],[0,1],[1,0],[2,0],[3,0]],[[0,1],[0,2],[1,0],[1,1],[1,2],[2,1]]] },
+  expert: { name: 'Expert', hints: 0, blurb: 'Some days have exactly one solution.', // solutions per day: min 1, median 13, max 106
+    pieces: [[[0,0],[0,1],[0,2],[1,0],[2,0]],[[0,1],[0,2],[1,0],[1,1],[2,0]],[[0,0],[1,0],[1,1],[2,0],[3,0]],[[0,0],[0,1],[1,0],[2,0],[2,1]],[[0,1],[0,2],[1,0],[1,1],[2,1]],[[0,0],[0,1],[1,0],[1,1],[2,0]],[[0,0],[0,1],[1,0],[2,0],[3,0]],[[0,1],[1,0],[1,1],[2,0],[3,0],[4,0]]] },
+};
 
 /* ---------- Layout constants ---------- */
 const CELL = 64;
@@ -534,10 +627,9 @@ const ghostEl = document.getElementById('ghost');
 const timerEl = document.getElementById('timer');
 const statusEl = document.getElementById('status');
 
-const COLS = 3, ROWS = Math.ceil(PIECES.length / COLS);
-const SLOT_W = BOARD_PX / COLS, SLOT_H = BOARD_PX / ROWS;
-const MAX_DIM = Math.max(...PIECES.map(cells => Math.max(...cells.map(([r, c]) => Math.max(r, c))) + 1));
-const TRAY_SCALE = Math.min(0.6, (Math.min(SLOT_W, SLOT_H) - 22) / (MAX_DIM * CELL));
+// Tray layout depends on the active piece set; buildPieces() fills these in.
+const COLS = 3;
+let ROWS = 3, SLOT_W = 0, SLOT_H = 0, MAX_DIM = 4, TRAY_SCALE = 0.5;
 
 let pieces = [];
 let zTop = 10;
@@ -552,6 +644,11 @@ const store = {
   write(v) { try { localStorage.setItem('dailyGrain.v1', JSON.stringify(v)); } catch (e) { /* storage unavailable */ } },
 };
 let muted = !!store.read().muted;
+
+// Saves are keyed by date for Normal (so older saves still count) and "mode/date" otherwise.
+let MODE = (() => { const m = store.read().mode; return DIFFICULTIES[m] ? m : 'normal'; })();
+const saveKeyFor = dateKey => MODE === 'normal' ? dateKey : `${MODE}/${dateKey}`;
+const saveKey = () => saveKeyFor(TODAY.key);
 
 /* ---------- Audio: synthesized wooden clack ---------- */
 let audio = null;
@@ -577,6 +674,125 @@ function clack(vol = 1, pitch = 1) {
   osc.connect(g2).connect(audio.destination);
   osc.start(t); osc.stop(t + 0.12);
 }
+
+/* ---------- Music: generated marimba, no audio files ---------- */
+// A slow four-chord loop. Each phrase picks a fresh rhythm and note pattern from the
+// chord tones, plays it twice, then picks another, so it wanders without repeating exactly.
+const savedSettings = store.read().settings || {};
+const music = {
+  on: savedSettings.music !== false,
+  vol: typeof savedSettings.musicVol === 'number' ? savedSettings.musicVol : 0.5,
+  playing: false, timer: 0, out: null, input: null, next: 0, step: 0, pattern: null, stopT: 0,
+};
+const BPM = 72, EIGHTH = 60 / BPM / 2, STEPS_PER_BAR = 8;
+const midi = n => 440 * Math.pow(2, (n - 69) / 12);
+// Dmaj9, Bm7, Gmaj7, Asus2 (MIDI note numbers, mid register)
+const CHORDS = [
+  { bass: 38, tones: [62, 66, 69, 73, 76] },
+  { bass: 35, tones: [59, 62, 66, 69, 74] },
+  { bass: 31, tones: [55, 59, 62, 66, 71] },
+  { bass: 33, tones: [57, 59, 64, 69, 71] },
+];
+function musicGraph() {
+  if (music.input) return;
+  const ac = audio;
+  music.out = ac.createGain(); music.out.gain.value = 0;
+  music.input = ac.createGain();
+  const lp = ac.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 2800;
+  // simple room echo from a generated impulse
+  const len = Math.floor(ac.sampleRate * 2.4);
+  const ir = ac.createBuffer(2, len, ac.sampleRate);
+  for (let ch = 0; ch < 2; ch++) {
+    const d = ir.getChannelData(ch);
+    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3.2);
+  }
+  const verb = ac.createConvolver(); verb.buffer = ir;
+  const wet = ac.createGain(); wet.gain.value = 0.32;
+  music.input.connect(lp).connect(music.out);
+  music.input.connect(verb).connect(wet).connect(music.out);
+  music.out.connect(ac.destination);
+}
+function marimba(note, t, vel) {
+  const ac = audio, f = midi(note);
+  const decay = 0.5 + Math.max(0, (80 - note)) * 0.03;
+  const g = ac.createGain();
+  g.gain.setValueAtTime(0.0001, t);
+  g.gain.exponentialRampToValueAtTime(vel, t + 0.005);
+  g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+  g.connect(music.input);
+  const o1 = ac.createOscillator(); o1.type = 'sine'; o1.frequency.value = f;
+  o1.connect(g); o1.start(t); o1.stop(t + decay + 0.05);
+  // the bright "tok" of a wooden bar: a 4x overtone that dies fast
+  const g2 = ac.createGain();
+  g2.gain.setValueAtTime(0.0001, t);
+  g2.gain.exponentialRampToValueAtTime(vel * 0.35, t + 0.003);
+  g2.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+  g2.connect(music.input);
+  const o2 = ac.createOscillator(); o2.type = 'sine'; o2.frequency.value = f * 3.98;
+  o2.connect(g2); o2.start(t); o2.stop(t + 0.12);
+}
+function newPattern() {
+  // 16 eighth-note slots over two bars: a chord-tone index or null for a rest
+  const pat = [];
+  let idx = Math.floor(Math.random() * 3) + 1;
+  for (let i = 0; i < 16; i++) {
+    const strong = i % 4 === 0;
+    if (!strong && Math.random() < 0.42) { pat.push(null); continue; }
+    idx = Math.max(0, Math.min(4, idx + [-2, -1, -1, 0, 1, 1, 2][Math.floor(Math.random() * 7)]));
+    pat.push(idx);
+  }
+  return pat;
+}
+function scheduleStep(t) {
+  const s = music.step;
+  const bar = Math.floor(s / STEPS_PER_BAR), inBar = s % STEPS_PER_BAR;
+  const chord = CHORDS[bar % CHORDS.length];
+  if (s % 32 === 0) music.pattern = newPattern();            // new idea every 4 bars (played twice)
+  if (inBar === 0) { marimba(chord.bass + 12, t, 0.22); marimba(chord.bass + 24, t + 0.01, 0.08); }
+  if (inBar === 4 && Math.random() < 0.5) marimba(chord.bass + 19, t, 0.12);
+  const slot = music.pattern[s % 16];
+  if (slot != null) {
+    const humanize = (Math.random() - 0.5) * 0.02;
+    marimba(chord.tones[slot], t + humanize, 0.1 + Math.random() * 0.06 + (inBar % 4 === 0 ? 0.04 : 0));
+  }
+  music.step++;
+}
+function setMusicLevel(ramp = 1.5) {
+  if (!music.out) return;
+  const t = audio.currentTime, target = music.playing ? Math.max(0.0001, music.vol * 0.9) : 0.0001;
+  music.out.gain.cancelScheduledValues(t);
+  music.out.gain.setValueAtTime(Math.max(0.0001, music.out.gain.value), t);
+  music.out.gain.exponentialRampToValueAtTime(target, t + ramp);
+}
+function startMusic() {
+  if (!music.on || !audio || document.hidden) return;
+  musicGraph();
+  clearTimeout(music.stopT);
+  if (!music.playing) {
+    music.playing = true;
+    music.next = audio.currentTime + 0.1;
+    clearInterval(music.timer);
+    music.timer = setInterval(() => {
+      while (music.next < audio.currentTime + 0.3) { scheduleStep(music.next); music.next += EIGHTH; }
+    }, 60);
+  }
+  setMusicLevel(1.5);
+}
+function stopMusic() {
+  if (!music.playing) return;
+  music.playing = false;
+  setMusicLevel(0.8);
+  clearTimeout(music.stopT);
+  music.stopT = setTimeout(() => { if (!music.playing) clearInterval(music.timer); }, 900);
+}
+// Browsers only allow sound after the player interacts, so music starts on the first click or key.
+const kickMusic = () => { ensureAudio(); startMusic(); };
+window.addEventListener('pointerdown', kickMusic, { once: true });
+window.addEventListener('keydown', kickMusic, { once: true });
+document.addEventListener('visibilitychange', () => {
+  if (!audio) return;
+  if (document.hidden) stopMusic(); else startMusic();
+});
 
 /* ---------- Rendering ---------- */
 let woodTextures = [];
@@ -894,17 +1110,18 @@ function turn(op, cx, cy) {
 /* ---------- Hint solver ---------- */
 // Each date gets a fixed number of hints. Used hints are saved per date, so Reset,
 // Undo and reloading the page don't refill them.
-const HINTS_PER_PUZZLE = 2;
+const hintLimit = () => DIFFICULTIES[MODE].hints;
+const SAVE_KEY_RE = /^(?:[a-z]+\/)?\d{4}-\d{2}-\d{2}$/;
 let hintsUsed = 0;
 function loadHints() {
-  hintsUsed = TODAY.override ? 0 : ((store.read().hints || {})[TODAY.key] || 0);
+  hintsUsed = TODAY.override ? 0 : ((store.read().hints || {})[saveKey()] || 0);
 }
 function spendHint() {
   hintsUsed++;
   if (TODAY.override) return;
   const data = store.read();
   data.hints = data.hints || {};
-  data.hints[TODAY.key] = hintsUsed;
+  data.hints[saveKey()] = hintsUsed;
   store.write(data);
 }
 function openCells() {
@@ -964,7 +1181,7 @@ function flashStatus(text) {
 }
 function hint() {
   if (solved || drag) return;
-  if (hintsUsed >= HINTS_PER_PUZZLE) { flashStatus('No hints left for this puzzle.'); return; }
+  if (hintsUsed >= hintLimit()) { flashStatus('No hints left for this puzzle.'); return; }
   ensureAudio();
   const placed = pieces.filter(p => p.placed), free = pieces.filter(p => !p.placed);
   let sol = null;
@@ -1029,9 +1246,9 @@ function checkWin() {
   if (!TODAY.override) {
     const data = store.read();
     data.solves = data.solves || {};
-    prior = data.solves[TODAY.key];
+    prior = data.solves[saveKey()];
     best = prior ? Math.min(prior.best ?? prior.time, secs) : secs;
-    data.solves[TODAY.key] = { time: secs, best, at: new Date().toISOString() };
+    data.solves[saveKey()] = { time: secs, best, at: new Date().toISOString() };
     store.write(data);
   }
   boardEl.classList.add('won');
@@ -1071,21 +1288,19 @@ function shavings() {
   }
 }
 function showStatus() {
-  const rec = TODAY.override ? null : (store.read().solves || {})[TODAY.key];
+  const rec = TODAY.override ? null : (store.read().solves || {})[saveKey()];
   statusEl.textContent = rec ? `Solved${TODAY.isReal ? ' today' : ''} in ${fmt(rec.time)}${rec.best != null && rec.best < rec.time ? ` (best ${fmt(rec.best)})` : ''}.` : '';
 }
 
 /* ---------- Buttons ---------- */
 const undoBtn = document.getElementById('undoBtn');
-const muteBtn = document.getElementById('muteBtn');
 const hintBtn = document.getElementById('hintBtn');
 function updateButtons() {
   undoBtn.disabled = solved || !undoStack.length;
-  const left = Math.max(0, HINTS_PER_PUZZLE - hintsUsed);
+  const left = Math.max(0, hintLimit() - hintsUsed);
   hintBtn.disabled = solved || left === 0;
   hintBtn.textContent = `Hint (${left})`;
   hintBtn.title = left ? `Place one piece correctly (H). ${left} left for this puzzle.` : 'No hints left for this puzzle.';
-  muteBtn.textContent = muted ? 'Sound off' : 'Sound on';
 }
 undoBtn.addEventListener('click', undo);
 hintBtn.addEventListener('click', hint);
@@ -1107,7 +1322,7 @@ function resetBoard() {
 /* ---------- Calendar: play past dates ---------- */
 function setSubtitle() {
   document.getElementById('sub').innerHTML =
-    `${TODAY.label}. Leave <strong>${MONTHS[TODAY.m]}</strong> and <strong>${TODAY.d}</strong> showing.` +
+    `<span class="mode">${DIFFICULTIES[MODE].name}</span> · ${TODAY.label}. Leave <strong>${MONTHS[TODAY.m]}</strong> and <strong>${TODAY.d}</strong> showing.` +
     (TODAY.isReal || TODAY.override ? '' : ` <a href="#" id="backToday">Back to today</a>`);
   const back = document.getElementById('backToday');
   if (back) back.addEventListener('click', e => { e.preventDefault(); loadDate(new Date()); });
@@ -1155,7 +1370,8 @@ function renderCalendar() {
     b.textContent = d;
     const future = key > todayKey;
     if (future) b.disabled = true; else playable++;
-    if (done[key]) { b.classList.add('solved'); b.title = `Solved in ${fmt(done[key].best ?? done[key].time)}`; solvedCount++; }
+    const rec = done[saveKeyFor(key)];
+    if (rec) { b.classList.add("solved"); b.title = `Solved in ${fmt(rec.best ?? rec.time)}`; solvedCount++; }
     if (key === todayKey) b.classList.add('is-today');
     if (key === TODAY.key && !TODAY.override) b.classList.add('current');
     b.addEventListener('click', () => loadDate(dt));
@@ -1169,18 +1385,127 @@ document.getElementById('calToday').addEventListener('click', () => loadDate(new
 document.getElementById('calPrev').addEventListener('click', () => { calMonth.setMonth(calMonth.getMonth() - 1); renderCalendar(); });
 document.getElementById('calNext').addEventListener('click', () => { calMonth.setMonth(calMonth.getMonth() + 1); renderCalendar(); });
 calEl.addEventListener('click', e => { if (e.target === calEl) closeCalendar(); });
-muteBtn.addEventListener('click', () => {
+/* ---------- Settings ---------- */
+const setEl = document.getElementById('setOverlay');
+const sfxSwitch = document.getElementById('sfxSwitch');
+const musicSwitch = document.getElementById('musicSwitch');
+const musicVolEl = document.getElementById('musicVol');
+const codeEl = document.getElementById('saveCode');
+const codeMsg = document.getElementById('codeMsg');
+const modalOpen = () => calEl.classList.contains('show') || setEl.classList.contains('show');
+function saveSettings() {
+  const data = store.read();
+  data.muted = muted;
+  data.settings = { music: music.on, musicVol: music.vol };
+  store.write(data);
+}
+function syncSettingsUI() {
+  sfxSwitch.setAttribute('aria-checked', String(!muted));
+  musicSwitch.setAttribute('aria-checked', String(music.on));
+  musicVolEl.value = Math.round(music.vol * 100);
+  musicVolEl.disabled = !music.on;
+}
+function openSettings() {
+  if (drag) return;
+  syncSettingsUI();
+  renderDifficulty();
+  codeEl.value = exportCode();
+  codeMsg.textContent = '';
+  setEl.classList.add('show');
+}
+function closeSettings() { setEl.classList.remove('show'); }
+function renderDifficulty() {
+  const seg = document.getElementById('diffSeg');
+  seg.innerHTML = '';
+  for (const [id, d] of Object.entries(DIFFICULTIES)) {
+    const b = document.createElement('button');
+    b.textContent = d.name;
+    b.setAttribute('aria-pressed', String(id === MODE));
+    b.addEventListener('click', () => setMode(id));
+    seg.appendChild(b);
+  }
+  const d = DIFFICULTIES[MODE];
+  document.getElementById('diffNote').textContent =
+    `${d.blurb} ${d.hints ? `${d.hints} hint${d.hints > 1 ? 's' : ''} per puzzle.` : 'No hints.'}`;
+}
+function setMode(id) {
+  if (id === MODE || drag) return;
+  MODE = id;
+  const data = store.read(); data.mode = MODE; store.write(data);
+  buildPieces();
+  loadHints();
+  resetBoard();
+  setSubtitle();
+  showStatus();
+  renderDifficulty();
+}
+document.getElementById('setBtn').addEventListener('click', openSettings);
+document.getElementById('setClose').addEventListener('click', closeSettings);
+setEl.addEventListener('click', e => { if (e.target === setEl) closeSettings(); });
+sfxSwitch.addEventListener('click', () => {
   muted = !muted;
-  const data = store.read(); data.muted = muted; store.write(data);
-  updateButtons();
+  saveSettings(); syncSettingsUI();
   if (!muted) { ensureAudio(); clack(0.6, 1); }
+});
+musicSwitch.addEventListener('click', () => {
+  music.on = !music.on;
+  saveSettings(); syncSettingsUI();
+  ensureAudio();
+  if (music.on) startMusic(); else stopMusic();
+});
+musicVolEl.addEventListener('input', () => {
+  music.vol = musicVolEl.value / 100;
+  setMusicLevel(0.15);
+  saveSettings();
+});
+
+/* ---------- Save code: move history between browsers without a server ---------- */
+function exportCode() {
+  const data = store.read();
+  const payload = JSON.stringify({ v: 1, solves: data.solves || {}, hints: data.hints || {} });
+  return 'DG1:' + btoa(unescape(encodeURIComponent(payload)));
+}
+function importCode(text) {
+  const t = text.trim();
+  if (!t.startsWith('DG1:')) throw new Error('bad prefix');
+  const p = JSON.parse(decodeURIComponent(escape(atob(t.slice(4)))));
+  if (!p || typeof p.solves !== 'object' || typeof p.hints !== 'object') throw new Error('bad shape');
+  const data = store.read();
+  data.solves = data.solves || {}; data.hints = data.hints || {};
+  let added = 0;
+  for (const [k, s] of Object.entries(p.solves)) {
+    if (!SAVE_KEY_RE.test(k) || !s || typeof s.time !== 'number') continue;
+    const cur = data.solves[k];
+    if (!cur) { data.solves[k] = s; added++; }
+    else cur.best = Math.min(cur.best ?? cur.time, s.best ?? s.time);
+  }
+  for (const [k, n] of Object.entries(p.hints)) {
+    if (SAVE_KEY_RE.test(k) && typeof n === 'number') data.hints[k] = Math.max(data.hints[k] || 0, n);
+  }
+  store.write(data);
+  return added;
+}
+document.getElementById('copyCode').addEventListener('click', async () => {
+  codeEl.value = exportCode();
+  try { await navigator.clipboard.writeText(codeEl.value); codeMsg.textContent = 'Copied.'; }
+  catch (e) { codeEl.select(); codeMsg.textContent = 'Select the code and copy it.'; }
+});
+document.getElementById('loadCode').addEventListener('click', () => {
+  try {
+    const added = importCode(codeEl.value);
+    codeMsg.textContent = added ? `Loaded ${added} solved day${added > 1 ? 's' : ''}.` : 'Loaded. Nothing new to add.';
+    codeEl.value = exportCode();
+    loadHints(); updateButtons(); showStatus();
+  } catch (e) {
+    codeMsg.textContent = "That code didn't work. Check it was copied in full.";
+  }
 });
 document.getElementById('closeWin').addEventListener('click', () => document.getElementById('overlay').classList.remove('show'));
 
 /* ---------- Input ---------- */
 window.addEventListener('pointerdown', e => {
   if (e.button !== 0 || drag || solved) return;
-  if (document.getElementById('overlay').classList.contains('show') || calEl.classList.contains('show')) return;
+  if (document.getElementById('overlay').classList.contains('show') || modalOpen()) return;
   const hit = pieceAt(e.clientX, e.clientY);
   if (!hit) return;
   e.preventDefault();
@@ -1202,16 +1527,17 @@ window.addEventListener('pointercancel', finishPointer);
 window.addEventListener('blur', finishPointer);
 
 window.addEventListener('contextmenu', e => {
+  if (modalOpen()) return;
   if (drag || pieceAt(e.clientX, e.clientY)) { e.preventDefault(); turn('cw', e.clientX, e.clientY); }
   else if (stage.contains(e.target)) e.preventDefault();
 });
 window.addEventListener('dblclick', e => {
-  if (drag) return;
+  if (drag || modalOpen()) return;
   if (pieceAt(e.clientX, e.clientY)) { e.preventDefault(); turn('flip', e.clientX, e.clientY); }
 });
 let wheelAcc = 0, wheelLast = 0, wheelIdle = 0;
 window.addEventListener('wheel', e => {
-  if (solved) return;
+  if (solved || modalOpen()) return;
   if (!drag && !pieceAt(e.clientX, e.clientY)) return;
   e.preventDefault();
   lastPointer = { x: e.clientX, y: e.clientY };
@@ -1227,7 +1553,8 @@ window.addEventListener('keydown', e => {
   const overlay = document.getElementById('overlay');
   if (e.key === 'Escape' && overlay.classList.contains('show')) { overlay.classList.remove('show'); return; }
   if (e.key === 'Escape' && calEl.classList.contains('show')) { closeCalendar(); return; }
-  if (calEl.classList.contains('show')) return;
+  if (e.key === 'Escape' && setEl.classList.contains('show')) { closeSettings(); return; }
+  if (modalOpen()) return;
   if ((e.metaKey || e.ctrlKey) && !e.shiftKey && e.key.toLowerCase() === 'z') { e.preventDefault(); undo(); return; }
   if (e.metaKey || e.ctrlKey || e.altKey) return;
   const k = e.key.toLowerCase();
@@ -1256,7 +1583,20 @@ function boot() {
 
   buildBoard();
 
-  pieces = PIECES.map((cells, i) => {
+  buildPieces();
+  updateButtons();
+  showStatus();
+}
+// (Re)creates the pieces for the current difficulty's set and lays out the tray.
+function buildPieces() {
+  pieces.forEach(p => p.el.remove());
+  const set = DIFFICULTIES[MODE].pieces;
+  ROWS = Math.ceil(set.length / COLS);
+  SLOT_W = BOARD_PX / COLS; SLOT_H = BOARD_PX / ROWS;
+  MAX_DIM = Math.max(...set.map(cells => Math.max(...cells.map(([r, c]) => Math.max(r, c))) + 1));
+  TRAY_SCALE = Math.min(0.6, (Math.min(SLOT_W, SLOT_H) - 22) / (MAX_DIM * CELL));
+  undoStack = [];
+  pieces = set.map((cells, i) => {
     const minR = Math.min(...cells.map(c => c[0])), minC = Math.min(...cells.map(c => c[1]));
     const base = cells.map(([r, c]) => [r - minR, c - minC]);
     const bw = Math.max(...base.map(c => c[1])) + 1, bh = Math.max(...base.map(c => c[0])) + 1;
@@ -1275,9 +1615,6 @@ function boot() {
     el.style.zIndex = 500 + i;
     return p;
   });
-
-  updateButtons();
-  showStatus();
 }
 boot();
 

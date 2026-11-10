@@ -2,7 +2,7 @@
 
 A wood-themed daily calendar puzzle. Eight wooden pieces, one board, and a new puzzle every day: fit all the pieces on the board so that only **today's month** and **today's day** stay uncovered.
 
-The pieces never change. They were picked so that every date of the year, Feb 29 included, can be solved.
+Each difficulty has its own fixed set of pieces, picked so that every date of the year, Feb 29 included, can be solved.
 
 ## Play
 
@@ -14,8 +14,26 @@ Open `index.html` in a browser. Nothing to install.
 | Rotate | Right-click or scroll | R |
 | Flip | Double-click | F |
 | Undo | Undo button | Ctrl/Cmd+Z |
-| Hint (2 per puzzle) | Hint button | H |
+| Hint (number depends on difficulty) | Hint button | H |
 | Play a past day | Calendar button | C |
+| Difficulty, sound, music, save code | Settings button | |
+
+## Difficulty
+
+| Mode | Solutions on a typical day | Hardest day | Hints per puzzle |
+|---|---|---|---|
+| Easy | ~134 | 40 | 3 |
+| Normal | ~28 | 5 | 2 |
+| Hard | ~17 | 2 | 1 |
+| Expert | ~13 | 1 | 0 |
+
+Hints used are saved per date and per mode, so Reset and reloading don't refill them.
+
+## Saving and music
+
+Solved days, hints and settings are saved in the browser (localStorage). There's no server. To move your history to another browser, copy the save code from Settings and load it there.
+
+The music is a marimba tune generated live by the browser, with no audio files. It starts after your first click.
 
 ## The board
 
@@ -31,14 +49,15 @@ Jul Aug Sep Oct Nov Dec
 
 43 cells. The 8 pieces (7 five-cell pieces and 1 six-cell piece) cover 41 of them.
 
-## How the piece set was chosen
+## How the piece sets were chosen
 
 `tools/search.js` is a one-time search. It samples random sets of 7 pentominoes plus 1 hexomino, skips the plain rectangles, and checks each set with a backtracking solver against all 366 dates. A set survives only if every date has a solution. Survivors are ranked so that the hardest day still has a few solutions, while the typical day has as few as possible.
 
-The chosen set is in `tools/pieces.json`. The hardest days have 5 solutions, a typical day has about 28, and the easiest has 91.
+The four sets the game uses are in `tools/difficulties.json`; every set that solved all dates is in `tools/survivors-7p1h.json`, sorted by how hard it is. Easy is the set with the most solutions per day, Expert the one with the fewest.
 
 ```bash
-node tools/search.js 1500
+node tools/search.js 2500
+MIX=1,6 node tools/search.js 2500
 ```
 
-This takes a few minutes and writes the top 5 sets to `tools/candidates.json`.
+Each run takes a few minutes. `MIX` sets how many pentominoes and hexominoes go in a set. A chunky mix of 1 pentomino and 6 hexominoes was tried for harder modes, but none of about 2,500 such sets could solve every date.

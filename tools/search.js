@@ -118,11 +118,15 @@ const pentoPool = pentos.filter(p => !isRect(p));
 const hexoPool = hexos.filter(p => !isRect(p));
 
 function rnd(n) { return Math.floor(Math.random() * n); }
+// MIX picks how many pentominoes / hexominoes per set; they must cover 41 cells.
+// Default "7,1" = 7 pentominoes + 1 hexomino. "1,6" = 1 pentomino + 6 hexominoes (chunkier, harder).
+const [NP, NH] = (process.env.MIX || '7,1').split(',').map(Number);
+if (NP * 5 + NH * 6 !== 41) throw new Error('MIX must cover 41 cells');
 function sample() {
-  const pool = [...pentoPool];
+  const pp = [...pentoPool], hp = [...hexoPool];
   const chosen = [];
-  for (let i = 0; i < 7; i++) chosen.push(pool.splice(rnd(pool.length), 1)[0]);
-  chosen.push(hexoPool[rnd(hexoPool.length)]);
+  for (let i = 0; i < NP; i++) chosen.push(pp.splice(rnd(pp.length), 1)[0]);
+  for (let i = 0; i < NH; i++) chosen.push(hp.splice(rnd(hp.length), 1)[0]);
   return chosen;
 }
 
@@ -157,8 +161,11 @@ const draw = p => {
   for (const [r, c] of p) g[r][c] = '#';
   return g.map(r => r.join('')).join('\n');
 };
-const out = results.slice(0, 5).map(r => ({ min: r.min, median: r.median, max: r.max, pieces: r.pieces }));
-require('fs').writeFileSync(__dirname + '/candidates.json', JSON.stringify(out, null, 1));
+const all = results.map(r => ({ min: r.min, median: r.median, max: r.max, pieces: r.pieces }));
+const out = all.slice(0, 5);
+const fs = require('fs');
+if (!process.env.MIX) fs.writeFileSync(__dirname + '/candidates.json', JSON.stringify(out, null, 1));
+fs.writeFileSync(__dirname + `/survivors-${NP}p${NH}h.json`, JSON.stringify(all, null, 1));
 for (const r of out.slice(0, 3)) {
   console.log(`\n=== min ${r.min}, median ${r.median}, max ${r.max}`);
   console.log(r.pieces.map(draw).join('\n\n'));
