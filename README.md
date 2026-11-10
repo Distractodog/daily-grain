@@ -4,9 +4,35 @@ A wood-themed daily calendar puzzle. Eight wooden pieces, one board, and a new p
 
 Each difficulty has its own fixed set of pieces, picked so that every date of the year, Feb 29 included, can be solved.
 
-## Play
+## Download and play
 
-Open `index.html` in a browser. Nothing to install.
+### **[⬇ Download Daily Grain (ZIP)](https://github.com/Distractodog/daily-grain/archive/refs/heads/main.zip)**
+
+Nothing to install, and no internet needed once it's downloaded.
+
+**On a Mac**
+1. Click the download link above.
+2. Open your **Downloads** folder and double-click `daily-grain-main.zip` to unzip it. (Safari often unzips it for you.)
+3. Open the `daily-grain-main` folder.
+4. Double-click **`index.html`**. The game opens in your web browser.
+
+**On Windows**
+1. Click the download link above.
+2. Open your **Downloads** folder, right-click `daily-grain-main.zip` and choose **Extract All…**, then **Extract**.
+3. Open the extracted `daily-grain-main` folder.
+4. Double-click **`index.html`**. The game opens in your web browser.
+
+If `index.html` opens in a text editor instead, right-click it, choose **Open with**, and pick a browser (Chrome, Safari, Edge or Firefox).
+
+**Tips**
+- Move the `daily-grain-main` folder somewhere you'll keep it, like Documents, and bookmark the page once it's open.
+- Keep the whole folder together. The game needs the `fonts` folder next to `index.html`.
+- Your solved days are saved in the browser you play in. Play in the same browser each time, or use the save code in **Settings** to move them.
+- The music starts after your first click. You can turn it off in **Settings**.
+
+## How to play
+
+Drag all the pieces onto the board so only today's month and day are left showing. Every day is a new puzzle with the same pieces.
 
 | Action | Mouse | Key |
 |---|---|---|
